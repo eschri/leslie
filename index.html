@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leslie</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Leslie">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#EAF0F3">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EAF0F3; --surface:#FFFFFF; --ink:#1D2B3A; --muted:#5A6877; --line:#C6D1D8;
+  --door:#E3A72F; --roof:#1D2B3A; --below:#DCE3E8; --grass:#5E8C61;
+  --over:#B23A48; --over-soft:#F6DDE1; --soon:#946100; --soon-soft:#F7E9C8; --ok:#2F7A55; --ok-soft:#D8EDE1;
+  --serif:"Young Serif", Georgia, "Times New Roman", serif;
+  --sans:"Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#121A22; --surface:#1A2530; --ink:#E6ECF1; --muted:#9AA8B5; --line:#2F3E4C;
+    --door:#E8B44A; --roof:#34506A; --below:#16202A; --grass:#4E7A52;
+    --over:#F08A97; --over-soft:#3A1F26; --soon:#E7B54E; --soon-soft:#3A2F16; --ok:#7FCBA0; --ok-soft:#1C3428;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121A22; --surface:#1A2530; --ink:#E6ECF1; --muted:#9AA8B5; --line:#2F3E4C;
+  --door:#E8B44A; --roof:#34506A; --below:#16202A; --grass:#4E7A52;
+  --over:#F08A97; --over-soft:#3A1F26; --soon:#E7B54E; --soon-soft:#3A2F16; --ok:#7FCBA0; --ok-soft:#1C3428;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5}
+h1,h2,h3{font-family:var(--serif);font-weight:400;line-height:1.15;margin:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.5}
+:focus-visible{outline:3px solid var(--door);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+.wrap{max-width:1040px;margin:0 auto;padding:0 18px}
+
+header{padding:24px 0 4px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.95rem;margin-bottom:16px}
+.brand .who{margin-left:auto;font-weight:500}
+.head{font-size:clamp(1.9rem,5.5vw,3rem);margin-bottom:8px}
+.lede{color:var(--muted);max-width:62ch;margin:0}
+
+/* House */
+.houseWrap{margin:6px 0 30px}
+.house{position:relative;max-width:900px;margin:0 auto}
+.roof{height:64px;background:var(--roof);clip-path:polygon(0 100%,50% 0,100% 100%);margin:0 -14px;position:relative}
+.chimney{position:absolute;top:-6px;right:22%;width:26px;height:40px;background:var(--roof)}
+.floor{display:grid;grid-template-columns:34px 1fr;background:var(--roof);gap:3px;padding:0 3px 3px}
+.flabel{writing-mode:vertical-rl;transform:rotate(180deg);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.04em;display:flex;align-items:center;justify-content:center;padding:6px 0}
+:root[data-theme="dark"] .flabel{color:var(--ink)}
+.cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:3px}
+.cell{position:relative;background:var(--surface);border:0;min-height:74px;padding:10px 10px 28px;text-align:left;display:flex;flex-direction:column;transition:background .15s}
+.cell:hover{background:color-mix(in srgb,var(--door) 16%,var(--surface))}
+.cell.sel{background:var(--door);color:#1D2B3A}
+.cname{font-weight:600;font-size:.92rem;line-height:1.2}
+.pill{position:absolute;left:10px;bottom:8px;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px}
+.pill.over{background:var(--over);color:#fff}
+.pill.due{background:var(--soon-soft);color:var(--soon);border:1px solid var(--soon)}
+.pill.clear{color:var(--ok);padding-left:0}
+.cell.sel .pill.clear{color:#1D2B3A}
+.ground{height:10px;background:var(--grass);margin:0 -14px}
+.floor.below .cell{background:var(--below)}
+.floor.below .cell.sel{background:var(--door)}
+.yard{display:flex;flex-wrap:wrap;gap:8px;margin:14px auto 0;max-width:900px}
+.yard .cell{min-height:0;padding:10px 14px;flex-direction:row;align-items:center;gap:10px;border:2px solid var(--roof);border-radius:10px}
+.yard .pill{position:static}
+
+/* Tabs */
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line);margin-top:22px}
+nav.tabs .wrap{display:flex;gap:2px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:14px 13px;font-weight:600;color:var(--muted);white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--door)}
+main{padding:26px 0 60px}
+
+.banner{background:var(--soon-soft);color:var(--soon);border:1px solid var(--soon);border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:.93rem}
+.roomHead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:6px}
+.roomHead h2{font-size:2rem}
+.sub{color:var(--muted);font-size:.92rem}
+.linky{background:none;border:0;color:var(--muted);text-decoration:underline;padding:0;font-size:.9rem}
+.drawer{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.drawer label,.edit label,.row label{display:grid;gap:4px;font-size:.84rem;font-weight:600}
+input[type=text],input[type=date],input[type=number],select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+input[type=number]{width:90px}
+label.cb{display:flex!important;align-items:center;gap:8px;font-weight:500!important}
+.btn{border:0;background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:8px;font-weight:600}
+.btn.soft{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--over);border:1px solid var(--over)}
+
+/* Progress */
+.progress{margin:14px 0 4px;max-width:560px}
+.track{height:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.fill{height:100%;background:var(--ok);border-radius:999px;transition:width .3s}
+.pmeta{display:flex;justify-content:space-between;font-size:.86rem;color:var(--muted);margin-top:6px;gap:10px;flex-wrap:wrap}
+
+.group{margin-top:26px}
+.group>h3,.group>summary{font-family:var(--serif);font-size:1.15rem;display:flex;align-items:baseline;gap:10px;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+.group>summary{cursor:pointer;list-style:none}
+.group>summary::-webkit-details-marker{display:none}
+.group>summary::after{content:"Show";font-family:var(--sans);font-size:.82rem;color:var(--muted);text-decoration:underline;margin-left:auto}
+.group[open]>summary::after{content:"Hide"}
+.group small{font-family:var(--sans);font-size:.82rem;color:var(--muted)}
+.task{display:grid;grid-template-columns:40px 1fr auto;gap:4px 12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
+.check{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;margin-top:1px;transition:background .15s,border-color .15s;padding:0}
+.check:hover:not(:disabled){border-color:var(--ok)}
+.check svg{opacity:0}
+.check.on{background:var(--ok);border-color:var(--ok)}
+.check.on svg{opacity:1}
+.check:hover:not(:disabled) svg{opacity:.4}
+.check.on:hover svg{opacity:1}
+.ttl{background:none;border:0;padding:0;text-align:left;font-weight:600;color:var(--ink)}
+.ttl:hover{text-decoration:underline}
+.tip{color:var(--muted);font-size:.9rem;margin-top:2px;max-width:66ch}
+.where{font-size:.8rem;font-weight:600;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-top:6px;font-size:.8rem;color:var(--muted)}
+.stat{text-align:right;font-size:.84rem;white-space:nowrap}
+.stat b{display:inline-block;font-weight:700;padding:2px 9px;border-radius:6px}
+.s-overdue .stat b{background:var(--over-soft);color:var(--over)}
+.s-today .stat b{background:var(--soon-soft);color:var(--soon)}
+.s-soon .stat b{color:var(--soon)}
+.s-ok .stat b{color:var(--muted);font-weight:500}
+.s-complete .stat b{color:var(--ok)}
+.task.isdone .ttl{color:var(--muted)}
+.task.isdone .stat b{background:var(--ok-soft);color:var(--ok)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:600;color:var(--ink)}
+.av{width:20px;height:20px;border-radius:50%;background:var(--c);color:#fff;display:inline-grid;place-items:center;font-size:.7rem;font-weight:700;flex:none}
+.av.lg{width:34px;height:34px;font-size:.95rem}
+.dots{display:inline-flex;gap:4px;align-items:center}
+.dots i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--line);display:inline-block}
+.dots i.f{background:var(--ok);border-color:var(--ok)}
+.dots i.t{outline:2px solid var(--door);outline-offset:1px}
+.dots i.h{background:linear-gradient(90deg,var(--ok) 50%,transparent 50%);border-color:var(--ok)}
+.with{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
+.with select{padding:3px 6px;font-size:.8rem}
+.undo1{font-size:.8rem;color:var(--over)}
+.btn.dangerfill{background:var(--over);color:#fff}
+.mgr{max-width:none!important}
+.mroom{border-top:1px solid var(--line)}
+.mroom:last-of-type{border-bottom:1px solid var(--line)}
+.mroom>summary{cursor:pointer;list-style:none;padding:14px 2px;font-family:var(--serif);font-size:1.1rem;display:flex;align-items:baseline;gap:10px}
+.mroom>summary::-webkit-details-marker{display:none}
+.mroom>summary::before{content:"▸";font-family:var(--sans);font-size:.85rem;color:var(--muted);transition:transform .15s}
+.mroom[open]>summary::before{transform:rotate(90deg)}
+.mroom>summary small{font-family:var(--sans);font-size:.82rem;color:var(--muted)}
+.mrow{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;margin:0 0 10px}
+.mrow .mtitle{width:100%;font-weight:600}
+.mctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin-top:10px}
+.mctl label{display:grid;gap:3px;font-size:.8rem;font-weight:600}
+.mctl input[type=number]{width:74px}
+.mctl .del{color:var(--over)}
+.mtotal{font-size:.8rem;align-self:center}
+.howlink{font-size:.8rem;color:var(--ink);font-weight:600}
+.sheet.howto{max-width:560px;max-height:88vh;overflow:auto}
+.howart{width:100%;height:auto;margin:12px 0 4px}
+.steps{padding-left:1.3rem;margin:12px 0}
+.steps li{margin-bottom:8px}
+.hnote{background:var(--soon-soft);color:var(--ink)!important;border-radius:8px;padding:10px 12px;font-size:.9rem}
+.vid{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
+.vid p{margin:6px 0}
+.hint{font-weight:400;color:var(--muted)}
+#auth{position:fixed;inset:0;z-index:40;background:var(--paper);overflow:auto}
+.authwrap{min-height:100%;display:grid;place-items:center;padding:24px 18px}
+.authcard{width:100%;max-width:420px}
+.authform{display:grid;gap:12px}
+.authform label{display:grid;gap:4px;font-size:.85rem;font-weight:600}
+.authform input{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:11px 12px;font-size:1rem}
+.authform .btn{padding:12px}
+.authmsg{margin-top:14px;background:var(--soon-soft);color:var(--ink)!important;border-radius:8px;padding:10px 12px;font-size:.92rem}
+.code{font-family:ui-monospace,Menlo,monospace;letter-spacing:.12em;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 8px;color:var(--ink)}
+.histbox{flex-basis:100%;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:2px}
+.histbox .sub{margin-top:4px}
+.spark{display:flex;gap:3px;align-items:flex-end;height:52px;margin:10px 0 2px;max-width:420px}
+.spark i{flex:1;background:var(--ok);border-radius:3px 3px 0 0;opacity:.85}
+.spark i.z{background:var(--line)}
+.spark i.t{outline:2px solid var(--door);outline-offset:1px}
+.sparkx{display:flex;justify-content:space-between;max-width:420px;font-size:.72rem;color:var(--muted)}
+.lb{list-style:none;margin:10px 0 0;padding:0;border-top:2px solid var(--ink)}
+.lb li{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.lb li.lead{background:linear-gradient(90deg,color-mix(in srgb,var(--door) 22%,transparent),transparent 70%)}
+.lb .rk{font-size:1.5rem;text-align:center}
+.lb .lbname{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.lb .fbar{height:10px}
+.lb .fnote{margin-top:4px;display:block}
+.lb .pts{font-family:var(--serif);font-size:1.7rem;text-align:right;line-height:1}
+.lb .pts small{display:block;font-family:var(--sans);font-size:.72rem;color:var(--muted)}
+.wins{font-size:.85rem}
+.champ{background:var(--soon-soft);color:var(--ink)!important;border-radius:10px;padding:10px 14px}
+.edit{grid-column:2 / -1;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-top:8px}
+@media(max-width:560px){
+  .task{grid-template-columns:40px 1fr}
+  .stat{grid-column:2;text-align:left}
+}
+.addTask{margin-top:28px}
+.addTask h3{font-size:1.1rem;margin-bottom:10px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.empty{color:var(--muted);padding:16px 0}
+
+/* Household */
+.people{border-top:2px solid var(--ink)}
+.person{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);align-items:start}
+.person .ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-top:8px}
+.fair{display:grid;gap:14px;margin-top:10px}
+.frow{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:center}
+.fbar{position:relative;height:22px;background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.fbar span{position:absolute;inset:0 auto 0 0;background:var(--c);opacity:.85}
+.fbar em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.fnote{font-size:.82rem;color:var(--muted);grid-column:2}
+.hist{width:100%;border-collapse:collapse;font-size:.9rem;margin-top:10px}
+.hist th,.hist td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+.hist th{font-weight:600;color:var(--muted);font-size:.8rem}
+.scroll{overflow-x:auto}
+.settings section,.hh section{margin-bottom:38px;max-width:720px}
+.settings h3,.hh h3{font-size:1.3rem;margin-bottom:6px}
+.settings p,.hh p{color:var(--muted);margin:0 0 12px}
+
+/* Overlay */
+.overlay{position:fixed;inset:0;background:rgba(15,22,30,.55);z-index:20;display:grid;place-items:center;padding:20px}
+.sheet{background:var(--surface);border-radius:16px;padding:24px;max-width:440px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.sheet h2{font-size:1.6rem;margin-bottom:8px}
+.sheet p{color:var(--muted);margin:0 0 16px}
+.pick{display:grid;gap:8px;margin-bottom:18px}
+.pick button{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-weight:600;text-align:left}
+.pick button:hover{border-color:var(--ink)}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;font-weight:600;font-size:.9rem;transition:opacity .2s,transform .2s;display:flex;gap:14px;align-items:center;pointer-events:none;z-index:30;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.toast button{background:none;border:0;color:var(--door);font-weight:700;padding:0}
+footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);font-size:.84rem}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <div class="brand">
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8v10H3z" fill="var(--roof)"/><rect x="10" y="14" width="4" height="7" fill="var(--door)"/></svg>
+    Leslie
+    <span class="who" id="who"></span>
+  </div>
+  <h1 class="head" id="head">Loading your house…</h1>
+  <p class="lede" id="lede"></p>
+</div></header>
+
+<nav class="tabs"><div class="wrap" role="tablist">
+  <button role="tab" data-view="my" aria-selected="true">My week</button>
+  <button role="tab" data-view="rooms" aria-selected="false">Rooms</button>
+  <button role="tab" data-view="family" aria-selected="false">Household</button>
+  <button role="tab" data-view="settings" aria-selected="false">Settings</button>
+</div></nav>
+
+<main class="wrap" id="view"></main>
+
+<footer><div class="wrap">
+  <p id="sync">Connecting…</p>
+  <p>Frequencies and time estimates are starting points; adjust them to fit your house. Leave gas, electrical panel and garage-door spring work to licensed pros.</p>
+</div></footer>
+
+<div id="overlay"></div>
+<div id="auth" hidden></div>
+<div class="toast" id="toast" role="status"><span id="toastMsg"></span><button id="toastUndo" type="button">Undo</button></div>
+
+<script>
+(function(){
+"use strict";
+
+// ---------------- Content ----------------
+const FREQS = [[1,"Daily"],[7,"Weekly"],[14,"Every 2 weeks"],[30,"Monthly"],[90,"Every 3 months"],[182,"Twice a year"],[365,"Yearly"],[730,"Every 2 years"],[1825,"Every 5 years"],[3650,"Every 10 years"],[0,"One time"]];
+const FREQ_LABEL = Object.fromEntries(FREQS);
+const FLOORS = [["upper","Upstairs"],["main","Main floor"],["basement","Basement"],["other","Whole house & outside"]];
+
+const LIVING = [
+  ["Tidy and reset the room",1,"Five minutes: fold blankets, return cups to the kitchen, put remotes in one spot."],
+  ["Vacuum rugs and floors",7,""],
+  ["Dust surfaces and electronics",7,"Dry microfiber for TV screens. Never spray cleaner directly on a screen."],
+  ["Vacuum the sofa and under cushions",30,""],
+  ["Wash throw blankets and pillow covers",30,""],
+  ["Wipe light switches, remotes and door handles",30,"These high-touch spots collect the most grime and germs."],
+  ["Dust ceiling fan and light fixtures",30,"Slide an old pillowcase over each fan blade so the dust stays inside it."],
+  ["Move furniture and vacuum underneath",90,""],
+  ["Clean windows, sills and blinds",90,""],
+  ["Wipe baseboards",90,""],
+  ["Deep clean carpets and rugs",365,"Rent a carpet cleaner or hire it out. Do it more often with pets or kids."]
+];
+const T = {
+  kitchen:[
+    ["Wipe counters and stovetop",1,"A quick daily wipe keeps grease from baking on."],
+    ["Run the dishwasher and unload it",1,"Scrape plates but skip pre-rinsing. Modern detergents need some food residue to work."],
+    ["Clean the sink and faucet",7,"Scrub with dish soap or baking soda, then dry the faucet to prevent water spots."],
+    ["Wipe appliance fronts and handles",7,"The fridge, oven, dishwasher and microwave handles get touched constantly."],
+    ["Clean inside the microwave",7,"Microwave a bowl of water with lemon slices for 3 minutes, then wipe away the loosened mess."],
+    ["Sweep and mop the floor",7,"Sweep first so the mop isn't pushing crumbs around."],
+    ["Take out trash and recycling",7,"Set this to match your pickup day."],
+    ["Wipe down the fridge and toss old food",30,"Clear out expired items and wipe shelves and drawers with warm soapy water."],
+    ["Clean the dishwasher filter",30,"Twist out the filter at the bottom, rinse under hot water and scrub with a soft brush."],
+    ["Freshen the garbage disposal",30,"Grind a handful of ice and citrus peels with cold water running. Never reach inside."],
+    ["Wash the trash can",30,"Rinse it, spray with disinfectant and let it dry before putting in a new bag."],
+    ["Wipe cabinet fronts and pulls",30,"Grease and fingerprints build up near the stove and trash."],
+    ["Check under the sink for leaks",30,"Look for drips, damp wood or warping. Catching a slow leak early saves the cabinet."],
+    ["Degrease the range hood filter",90,"Soak the metal filter in hot water with dish soap and baking soda, then scrub. Many can go in the dishwasher."],
+    ["Clean the oven",90,"Use the self-clean cycle with windows open, or spread baking-soda paste inside overnight and wipe out."],
+    ["Vacuum the refrigerator coils",182,"They're behind the bottom grille or on the back. Dusty coils make the fridge work harder."],
+    ["Replace the fridge water filter",182,"Only if your fridge has a water or ice dispenser. Most filters last about 6 months."],
+    ["Clean out the pantry",182,"Toss expired food, wipe the shelves and watch for pantry moths."]
+  ],
+  fullbath:[
+    ["Wipe sink, counter and mirror",7,"Glass cleaner on the mirror, all-purpose spray on the counter and faucet."],
+    ["Clean the toilet, including around the base",7,"Brush and cleaner in the bowl, then wipe the seat, lid, tank, and the floor and bolt caps around the base where splashes collect."],
+    ["Scrub the tub and shower",7,"Spray and let it sit a few minutes before scrubbing. A squeegee after showers cuts buildup."],
+    ["Sweep and mop the floor",7,"Get behind the toilet and along the edges."],
+    ["Wash towels and bath mat",7,"Let towels dry fully between uses to keep mildew away."],
+    ["Empty the trash",7,""],
+    ["Clear hair from the drains",30,"A cheap plastic drain snake pulls out clogs before they become a plumber call."],
+    ["Wash the shower curtain liner",30,"Most liners can go in the washer on warm with a couple of towels. Replace it if mildew won't come out."],
+    ["Clean the exhaust fan cover",90,"Dust clogs the fan and traps moisture. Run the fan during showers and for 20 minutes after."],
+    ["Descale the showerhead",90,"Tie a bag of white vinegar around the head for an hour, then run hot water through it."],
+    ["Check the toilet for leaks",90,"Add a few drops of food coloring to the tank. If color shows in the bowl after 15 minutes without flushing, replace the flapper."],
+    ["Inspect caulk and grout",182,"Look for gaps or cracks around the tub, shower and sink. Recaulk before water gets into the walls."],
+    ["Clear out expired medicine and products",182,"Many pharmacies take back old medications."]
+  ],
+  halfbath:[
+    ["Wipe sink, counter and mirror",7,""],
+    ["Clean the toilet, including around the base",7,"Wipe the seat, lid, tank and the floor around the base, where splashes collect."],
+    ["Swap the hand towel",7,"Twice a week if it gets heavy use from guests."],
+    ["Sweep and mop the floor",7,""],
+    ["Empty the trash",7,""],
+    ["Clean the exhaust fan cover",90,"Skip if the room doesn't have a fan."],
+    ["Check the toilet for leaks",90,"Food coloring in the tank. If it shows in the bowl after 15 minutes, replace the flapper."],
+    ["Inspect caulk around the sink and toilet",365,""]
+  ],
+  bedroom:[
+    ["Change the sheets",7,"Use the warmest water the fabric allows."],
+    ["Vacuum or sweep the floor",7,""],
+    ["Dust surfaces",14,"Nightstands, dresser, lamp shades and headboard. Work top to bottom."],
+    ["Vacuum under the bed and furniture",30,""],
+    ["Dust ceiling fan and light fixtures",30,"Slide an old pillowcase over each blade so dust doesn't fall on the bed."],
+    ["Wash the comforter or duvet",90,"Check the tag. Oversized comforters may need a laundromat machine."],
+    ["Clean windows, sills and blinds",90,""],
+    ["Rotate and vacuum the mattress",182,"Turn it head to foot to even out wear, and vacuum the top while the sheets are off."],
+    ["Wash pillows",182,"Many are machine washable; check the tag. Replace pillows every year or two."],
+    ["Declutter the closet",182,"Good to do at season changes. Donate what you haven't worn in a year."],
+    ["Wash or vacuum curtains",182,""]
+  ],
+  living: LIVING,
+  family: LIVING.concat([["Chimney inspection",365,"If you have a fireplace: have a certified sweep inspect it before the first fire of the season. Delete this if you don't have one."]]),
+  entry:[
+    ["Sweep and mop the entry floor",7,"Entry floors collect the most grit. Keeping them clean stops it from being tracked through the house."],
+    ["Shake out the doormats",7,""],
+    ["Put away shoes, coats and bags",7,""],
+    ["Wash doormats and rugs",30,""],
+    ["Wipe the front door, handles and light switch",30,""],
+    ["Dust the entry light fixture",90,""],
+    ["Check door weatherstripping",182,"Close the door on a sheet of paper. If it slides out easily, replace the seal. Do this before winter."],
+    ["Lubricate locks and hinges",365,"Graphite or silicone spray in the locks, a drop of oil on squeaky hinges."]
+  ],
+  stairs:[
+    ["Vacuum the stairs",7,"Start at the top. The hose attachment reaches the corners."],
+    ["Wipe handrails and banisters",14,""],
+    ["Dust baseboards and hall surfaces",30,""],
+    ["Wipe light switches and door frames",30,"Fingerprints collect at kid and pet height."],
+    ["Check that railings are secure",182,"Tighten any loose balusters or brackets."]
+  ],
+  laundry:[
+    {title:"Do a load of laundry",every:1,asNeeded:true,perWeek:6,min:20,tip:"Wash, dry, fold and put away. Tap each time you finish a load; it counts for whoever did it."},
+    ["Clean the lint screen (every load)",1,"Lint buildup is a leading cause of dryer fires. Clear it every load; mark it daily as a reminder."],
+    ["Wipe the washer door seal",7,"On front-loaders, dry the rubber gasket and leave the door open between loads to prevent mildew."],
+    ["Run a washer cleaning cycle",30,"Use the clean setting with a washer-cleaner tablet or a cup of bleach. Never mix bleach and vinegar."],
+    ["Clean the detergent dispenser",30,""],
+    ["Check for leaks around the machines",30,"Look under and behind them for puddles or a damp floor."],
+    ["Wipe down machines and shelves",30,""],
+    ["Sweep behind and around machines",90,""],
+    ["Check washer hoses for bulges or cracks",182,"Replace rubber hoses every 5 years, or upgrade to braided steel. Burst hoses are a top cause of water damage."],
+    ["Clean the dryer vent duct",365,"Clean the duct all the way to the outside flap with a vent brush kit, or hire it out. Do it sooner if loads take longer to dry."]
+  ],
+  basement:[
+    ["Empty and clean the dehumidifier",7,"If you run one. Aim for 30 to 50% humidity."],
+    ["Check for water, damp spots or musty smells",30,"Especially after heavy rain. Look along the base of walls and around windows."],
+    ["Sweep or vacuum the floor",30,""],
+    ["Test the sump pump",90,"If you have one: slowly pour a bucket of water into the pit and make sure it turns on and drains. Always before spring."],
+    ["Look for pests",90,"Droppings, insect trails, chewed boxes. Seal gaps where pipes come in."],
+    ["Inspect foundation walls for cracks",182,"Hairline cracks are common. Watch for cracks that widen, run horizontally or leak. Dated photos help you compare."],
+    ["Declutter storage",365,"Keep boxes on shelves, off the floor, in case of water."],
+    ["Test for radon",730,"The EPA recommends testing every two years, and after moving in. Kits are sold at hardware stores.",1]
+  ],
+  office:[
+    ["Vacuum the floor",7,""],
+    ["Dust the desk and electronics",7,""],
+    ["Wipe the keyboard, mouse and phone",30,""],
+    ["Clean windows, sills and blinds",90,""],
+    ["Clear out and shred old papers",90,""]
+  ],
+  dining:[
+    ["Wipe the table and chairs",7,""],
+    ["Vacuum or sweep the floor",7,""],
+    ["Dust surfaces",14,""],
+    ["Dust the light fixture",90,""],
+    ["Clean windows, sills and blinds",90,""]
+  ],
+  systems:[
+    ["Test smoke and CO alarms",30,"Press and hold each test button. You need one on every floor, including the basement, and one outside each sleeping area.",1],
+    ["Check fire extinguishers",30,"The needle should be in the green. Keep one in the kitchen and one on each floor.",1],
+    ["Test GFCI outlets",30,"Press TEST (power should cut off), then RESET. They're in the kitchen, bathrooms, laundry, garage and outside."],
+    ["Replace the furnace filter",90,"Check it monthly and replace when it looks dusty, usually every 1 to 3 months. Write the size down.",1],
+    ["Vacuum air vents and returns",90,""],
+    ["Heating system tune-up",365,"Book a technician in early fall, before the rush."],
+    ["Air conditioning tune-up",365,"Book in spring. Hose off the outdoor unit's fins and keep plants 2 feet away from it."],
+    ["Flush the water heater",365,"Drains sediment that shortens the tank's life. Tankless heaters need descaling instead; check the manual."],
+    ["Test the water heater relief valve",365,"Lift the lever briefly; water should flow from the drain pipe and stop when you let go. Stand clear, it's hot."],
+    ["Exercise the main water shutoff",365,"Turn it off and back on so it doesn't seize. Everyone in the house should know where it is."],
+    ["Replace smoke alarm batteries",365,"Skip if yours have sealed 10-year batteries."],
+    ["Replace CO alarms",1825,"CO alarms wear out after 5 to 7 years. The date is printed on the back."],
+    ["Replace smoke alarms",3650,"Smoke alarms expire after 10 years. Check the date on the back."]
+  ],
+  outside:[
+    ["Test the garage door auto-reverse",30,"Lay a 2x4 flat under the door and close it; it should reverse on contact. Also wave something through the sensor beam."],
+    ["Sweep the garage",90,""],
+    ["Clean gutters and downspouts",182,"Late spring and late fall, after the leaves drop. Downspouts should empty at least 5 feet from the foundation."],
+    ["Look over the roof",182,"From the ground with binoculars: missing or curled shingles and damaged flashing. Also check after big storms."],
+    ["Lubricate the garage door",182,"Use garage door lubricant on rollers and hinges. Leave springs to a pro; they're under dangerous tension."],
+    ["Shut off and drain outdoor faucets",365,"Before the first freeze: close the indoor shutoff valve, open the outside faucet to drain it, and disconnect hoses."],
+    ["Check caulk around windows and doors",365,"Recaulk cracks to keep out water and drafts."],
+    ["Check grading around the foundation",365,"Soil should slope away from the house so water drains off, not toward the basement."],
+    ["Wash exterior windows",365,""],
+    ["Wash siding, deck and walkways",365,"A gentle pressure-washer setting or a hose and brush. Go easy on wood and older paint."],
+    ["Trim plants away from the house",365,"Keep branches off the roof and shrubs at least a foot from the siding."],
+    ["Service the mower and snow blower",365,"Oil, spark plug and blade. Mower in spring, snow blower in fall."]
+  ],
+  movein:[
+    ["Change or rekey exterior locks",0,"You don't know how many keys the previous owners gave out."],
+    ["Find the main water shutoff",0,"Usually where the water line enters the house, often in the basement. Tag it so anyone can find it fast."],
+    ["Label the electrical panel",0,"Flip each breaker and note what turns off. Tedious, but invaluable in an emergency."],
+    ["Find the gas shutoff",0,"Usually at the meter. If you ever smell gas, leave the house and call the gas company from outside."],
+    ["Check the dates on smoke and CO alarms",0,"Replace smoke alarms over 10 years old and CO alarms over 7."],
+    ["Note the water heater and furnace ages",0,"The manufacture date is on the label. Water heaters last about 8 to 12 years, furnaces 15 to 20."],
+    ["Read through your inspection report",0,"List everything flagged and put safety items first."],
+    ["Deep clean before unpacking",0,"Inside cabinets, closets and appliances are easiest while they're empty."],
+    ["Start a home records folder",0,"Manuals, warranties, the inspection report, paint colors and repair receipts, all in one place."],
+    ["Stock basic tools and supplies",0,"Plunger, flashlight, step ladder, basic tool kit, spare furnace filters and light bulbs."]
+  ],
+  blank:[]
+};
+T.halls = T.entry.concat(T.stairs);
+T.meals = [
+  {title:"Cook dinner",every:1,min:45,asNeeded:true,perWeek:5,tip:"Only the nights you actually cook count. Eating out or scrounging? Just skip it."}
+];
+T.fun = [
+  {title:"Set up the Splendor board",every:1,perDay:4,min:5,tip:"Log each setup. Tap again for every game; use Undo one if you tap by mistake."}
+];
+T.pet = [
+  {title:"Feed Oppie and refill his water",every:1,perDay:2,min:5,tip:"Breakfast and dinner, with fresh water each time."},
+  {title:"Take Oppie out for a walk",every:1,perDay:2,min:30,together:true,tip:"Two outings a day. Went together? Add the other person so you split the credit."},
+  {title:"Wash Oppie's bowls",every:7,min:5,tip:""},
+  {title:"Wash Oppie's bed and blankets",every:30,min:15,tip:""},
+  {title:"Brush Oppie and check his nails",every:30,min:20,tip:""},
+  {title:"Give flea, tick and heartworm meds",every:30,min:5,adult:true,tip:"Follow your vet's schedule for which products and how often. Delete this if it doesn't apply."},
+  {title:"Vet checkup and vaccines",every:365,min:90,adult:true,tip:"Book the annual visit."}
+];
+const TYPE_NAMES = {bedroom:"Bedroom",fullbath:"Full bathroom",halfbath:"Half bathroom",kitchen:"Kitchen",living:"Living room",family:"Family room",dining:"Dining room",office:"Office",entry:"Entry or foyer",stairs:"Stairs and hallways",halls:"Entry, stairs and halls",laundry:"Laundry room",basement:"Basement",systems:"Whole house and systems",outside:"Garage and outside",movein:"Move-in checklist",meals:"Meals",fun:"Family time",pet:"Pet care",blank:"Empty room"};
+const DEFAULT_ROOMS = [
+  ["Bedrooms","bedroom","upper"],["Full bathrooms","fullbath","upper"],
+  ["Living spaces","family","main"],["Kitchen","kitchen","main"],["Powder room","halfbath","main"],
+  ["Stairs and halls","halls","main"],["Laundry room","laundry","main"],
+  ["Basement","basement","basement"],
+  ["Whole house","systems","other"],["Garage and outside","outside","other"],["Move-in checklist","movein","other"],
+  ["Meals","meals","other"],["Oppie","pet","other"]
+];
+
+
+
+// ---------------- Helpers ----------------
+function todayISO(){ return iso(new Date()); }
+function iso(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function parse(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function addDays(s,n){ const d=parse(s); d.setDate(d.getDate()+n); return d; }
+function daysUntil(d){ return Math.round((d - parse(todayISO()))/86400000); }
+function fmt(s){ const d=parse(s); const o={month:"short",day:"numeric"}; if(d.getFullYear()!==new Date().getFullYear()) o.year="numeric"; return d.toLocaleDateString(undefined,o); }
+function human(n){
+  if(n<0){ const a=-n; if(a<14) return `${a} day${a>1?"s":""} overdue`; if(a<60) return `${Math.round(a/7)} weeks overdue`; return `${Math.round(a/30)} months overdue`; }
+  if(n===0) return "Due today"; if(n===1) return "Tomorrow"; if(n<14) return `In ${n} days`;
+  if(n<60) return `In ${Math.round(n/7)} weeks`; if(n<700) return `In ${Math.round(n/30)} months`; return `In ${Math.round(n/365)} years`;
+}
+function weekStart(s){ const d=parse(s); d.setDate(d.getDate()-((d.getDay()+6)%7)); return iso(d); }
+function shiftWeek(ws,n){ return iso(addDays(ws,7*n)); }
+const wkId = ws => "w"+ws;
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rid = () => Math.random().toString(36).slice(2,9);
+const clone = o => o===undefined ? undefined : JSON.parse(JSON.stringify(o));
+const hrs = m => m<60 ? `${Math.round(m)} min` : `${(Math.round(m/6)/10).toString()} hr`;
+const lsGet = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
+const lsSet = (k,v) => { try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,v); }catch(e){} };
+
+// Time estimates (minutes per room covered)
+const MIN_RULES=[[/lint/i,1],[/hand towel/i,1],[/door seal/i,2],[/empty the trash/i,2],[/shake out/i,2],[/tidy/i,5],[/counters and stovetop/i,5],
+ [/dishwasher and unload/i,10],[/trash and recycling/i,5],[/put away shoes/i,5],[/sheets/i,10],[/toilet, including/i,10],[/tub and shower/i,15],
+ [/vacuum the stairs/i,15],[/sweep and mop/i,15],[/vacuum rugs|vacuum or sweep|vacuum the floor/i,15],[/dust surfaces/i,10],[/towels and bath/i,5],
+ [/sink, counter/i,5],[/clean the sink/i,5],[/microwave/i,5],[/appliance fronts/i,5],[/handrails/i,5],[/dehumidifier/i,5],[/wipe the table/i,5],
+ [/fridge and toss/i,20],[/dishwasher filter/i,10],[/disposal/i,5],[/trash can/i,10],[/cabinet fronts/i,15],[/leaks/i,5],[/hair from/i,10],
+ [/curtain liner/i,5],[/under the bed/i,15],[/ceiling fan/i,10],[/sofa/i,15],[/throw blankets/i,5],[/light switches/i,10],[/cleaning cycle/i,5],
+ [/detergent/i,5],[/test smoke/i,10],[/extinguisher/i,5],[/GFCI/i,10],[/auto-reverse/i,5],[/range hood/i,20],[/clean the oven/i,30],
+ [/windows, sills/i,30],[/baseboards/i,20],[/move furniture/i,30],[/exhaust fan/i,10],[/descale/i,10],[/sump/i,10],[/pests/i,15],
+ [/furnace filter/i,5],[/air vents/i,20],[/sweep the garage/i,20],[/coils/i,20],[/water filter/i,10],[/pantry/i,30],[/caulk and grout/i,15],
+ [/medicine/i,15],[/comforter/i,10],[/mattress/i,15],[/wash pillows/i,10],[/closet/i,45],[/curtains/i,20],[/gutters/i,90],[/roof/i,20],
+ [/weatherstripping/i,10],[/railings/i,10],[/washer hoses/i,5],[/dryer vent/i,45],[/foundation/i,15],[/radon/i,10],[/declutter storage/i,90],
+ [/deep clean carpets/i,120],[/chimney/i,15],[/tune-up/i,15],[/flush the water heater/i,45],[/relief valve/i,5],[/main water shutoff/i,5],
+ [/batteries/i,20],[/replace co|replace smoke alarms/i,30],[/lubricate/i,20],[/outdoor faucets/i,20],[/caulk around windows/i,60],
+ [/grading/i,20],[/exterior windows/i,60],[/siding/i,120],[/trim plants/i,60],[/mower/i,45],[/locks/i,30],[/electrical panel/i,45],
+ [/deep clean before/i,240],[/inspection report/i,30]];
+const FREQ_MIN={1:5,7:10,14:10,30:15,90:20,182:30,365:30,0:30};
+function taskMin(t){ if(typeof t.min==="number" && t.min>0) return t.min; for(const [re,m] of MIN_RULES) if(re.test(t.title)) return m; return FREQ_MIN[t.every]||30; }
+const taskCount = (r,t) => t.count!=null ? Math.max(1,Number(t.count)||1) : (r.count||1);
+const unitMin = (r,t) => taskMin(t)*taskCount(r,t);
+const perDay = t => t.every===1 ? Math.max(1,t.perDay||1) : 1;
+const perWeek = t => Math.max(0, Math.min(50, t.perWeek==null ? 5 : Number(t.perWeek)));
+const isNeed = t => t.every===1 && !!t.asNeeded;
+// Frequency picker with an "As it comes up" choice (stored as daily + asNeeded)
+function freqOptions(t, def){
+  const cur = t ? (isNeed(t) ? "need" : String(t.every)) : String(def);
+  return FREQS.map(([v,l])=>`<option value="${v}" ${String(v)===cur?"selected":""}>${l}</option>`).join("")
+    + `<option value="need" ${cur==="need"?"selected":""}>As it comes up</option>`;
+}
+const freqPatch = v => v==="need" ? {every:1, asNeeded:true} : {every:Number(v), asNeeded:false};
+const taskLoad = (r,t) => unitMin(r,t)*(t.every===1 ? (t.asNeeded ? perWeek(t) : 7*perDay(t)) : 1);
+const ADULT_ROOMS=["systems","outside","movein"];
+const ADULT_RE=/oven|water heater|dryer vent|chimney|radon|gas|electrical|locks|range hood/i;
+function isAdult(r,t){ return typeof t.adult==="boolean" ? t.adult : (ADULT_ROOMS.includes(r.type) || ADULT_RE.test(t.title)); }
+
+const DEFAULT_COUNTS={Bedrooms:4,"Full bathrooms":2};
+function makeRoom(name,type,floor,count){
+  const id="r"+rid();
+  return {id,name,type,floor,count:count||DEFAULT_COUNTS[name]||1,
+    tasks:(T[type]||[]).map((x,i)=>Array.isArray(x)?({id:id+"t"+i,title:x[0],every:x[1],tip:x[2]||"",m:x[3]?1:0}):Object.assign({id:id+"t"+i,tip:"",m:0},x))};
+}
+function seedConfig(){ return {v:7,start:todayISO(),rooms:DEFAULT_ROOMS.map(r=>makeRoom(...r)),members:[]}; }
+
+// Migration of the earlier single-person version
+function migrate(s){
+  if((s.v||1)>=2) return migrate3(s);
+  [["bedroom","Bedrooms"],["fullbath","Full bathrooms"]].forEach(([type,name])=>{
+    const rs=s.rooms.filter(r=>r.type===type);
+    if(!rs.length) return;
+    const base=rs[0]; base.name=name; base.floor="upper";
+    rs.slice(1).forEach(r=>{
+      r.tasks.forEach(t=>{
+        const match=base.tasks.find(b=>b.title===t.title);
+        const d=s.done[t.id]; delete s.done[t.id];
+        if(match){ if(d && (!s.done[match.id] || s.done[match.id]<d)) s.done[match.id]=d; }
+        else { base.tasks.push(t); if(d) s.done[t.id]=d; }
+      });
+    });
+    s.rooms=s.rooms.filter(r=>r===base || r.type!==type);
+  });
+  s.v=2; migrate3(s); return true;
+}
+function mergeInto(s,base,others,rename){
+  others.forEach(r=>{
+    r.tasks.forEach(t=>{
+      if(rename && rename[t.title]) t.title=rename[t.title];
+      const match=base.tasks.find(b=>b.title===t.title);
+      const d=s.done[t.id]; delete s.done[t.id];
+      if(match){ if(d && (!s.done[match.id] || s.done[match.id]<d)) s.done[match.id]=d; }
+      else { base.tasks.push(t); if(d) s.done[t.id]=d; }
+    });
+  });
+  s.rooms=s.rooms.filter(r=>!others.includes(r));
+}
+// v3: combine living + family into "Living spaces", and fold the foyer into "Stairs and halls"
+function migrate3(s){
+  if((s.v||1)>=3) return false;
+  const liv=s.rooms.filter(r=>r.type==="living"||r.type==="family");
+  if(liv.length){ const base=liv.find(r=>r.type==="living")||liv[0]; base.name="Living spaces"; base.floor="main"; mergeInto(s,base,liv.filter(r=>r!==base)); }
+  const halls=s.rooms.filter(r=>r.type==="stairs"||r.type==="entry");
+  if(halls.length){
+    const base=halls.find(r=>r.type==="stairs")||halls[0];
+    const rename={"Sweep and mop the floor":"Sweep and mop the entry floor","Dust the light fixture":"Dust the entry light fixture"};
+    if(base.type==="entry") base.tasks.forEach(t=>{ if(rename[t.title]) t.title=rename[t.title]; });
+    base.name="Stairs and halls"; base.type="halls"; base.floor="main";
+    mergeInto(s,base,halls.filter(r=>r!==base),rename);
+  }
+  s.v=3; return true;
+}
+
+
+// ---------------- Local fallback store (same shape as the shared db) ----------------
+function makeLocalDB(){
+  const KEY="home-base-local-db"; let store={};
+  try{ store=JSON.parse(lsGet(KEY)||"{}")||{}; }catch(e){}
+  const subs={};
+  const persist=()=>lsSet(KEY,JSON.stringify(store));
+  const has=p=>Object.prototype.hasOwnProperty.call(store,p);
+  const snap=p=>({exists:has(p),data:()=>store[p]});
+  const notify=p=>(subs[p]||[]).forEach(f=>{ try{ f(snap(p)); }catch(e){ console.error(e); } });
+  const isObj=v=>v&&typeof v==="object"&&!Array.isArray(v);
+  function merge(a,b){ const o=Object.assign({},a); for(const k in b){ const v=b[k]; if(v===undefined) continue; o[k]=(isObj(v)&&isObj(o[k]))?merge(o[k],v):clone(v); } return o; }
+  return {doc(p){ return {
+    get:async()=>snap(p),
+    set:async d=>{ store[p]=clone(d); persist(); setTimeout(()=>notify(p)); },
+    update:async d=>{ if(!has(p)) throw {code:"invalid_argument",message:"missing document"}; store[p]=merge(store[p],d); persist(); setTimeout(()=>notify(p)); },
+    onSnapshot:f=>{ (subs[p]=subs[p]||[]).push(f); setTimeout(()=>f(snap(p))); return ()=>{ subs[p]=(subs[p]||[]).filter(x=>x!==f); }; },
+    acquire:async()=>({acquired:true})
+  }; }};
+}
+
+// ---------------- State ----------------
+const P={config:"home/config", last:"home/last"};
+let DB=null, USER=null, remote=false, myUid=null, canWrite=true, isOwner=false;
+let cfg=null, last={}, week=null, wkdone={}, hist={};
+let phase="loading", meId=null, curWk=weekStart(todayISO());
+let switching=false, weekLoaded=false, planning=false, ensuringDone=false, linking=false;
+let view="my", selRoom=null, openEdit=null, showRoomSettings=false, showPicker=false, pickerSkipped=false;
+const PALETTE=["#2F6F8F","#B5562F","#6A4C93","#2F7A55","#A0640A","#9C3D5A","#3D5A9C","#5E7A1F"];
+const CHECK=`<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+const members = () => (cfg && cfg.members) || [];
+const member = id => members().find(m=>m.id===id) || null;
+const mColor = m => PALETTE[Math.max(0,members().indexOf(m)) % PALETTE.length];
+const mName = m => (m && m.name) || "Someone";
+function chip(m){ if(!m) return ""; return `<span class="chip" style="--c:${mColor(m)}"><span class="av">${esc(mName(m).charAt(0).toUpperCase())}</span>${esc(mName(m))}</span>`; }
+function allTasks(){ const out=[]; (cfg?cfg.rooms:[]).forEach(r=>r.tasks.forEach(t=>out.push({r,t}))); return out; }
+function findTask(id){ for(const r of (cfg?cfg.rooms:[])){ const t=r.tasks.find(x=>x.id===id); if(t) return {r,t}; } return null; }
+const lastDate = t => (last[t.id] && last[t.id].d) || null;
+function dueDate(t){ const l=lastDate(t); return l ? addDays(l,t.every) : addDays(cfg.start, t.m?0:t.every); }
+function status(t){
+  if(t.asNeeded) return {key:"ok",label:"As needed",n:1};
+  if(t.every===0) return lastDate(t) ? {key:"complete",label:"Done",n:Infinity} : {key:"today",label:"To do",n:0};
+  let n=daysUntil(dueDate(t)); if(t.every===1 && n<0) n=0;
+  const w=t.every<=1?0:t.every<=7?2:t.every<=14?3:t.every<=30?7:14;
+  return {key:n<0?"overdue":n===0?"today":n<=w?"soon":"ok", label:human(n), n};
+}
+const doneKey = (tid,date) => tid+"~"+date;
+function entriesFor(tid){ return Object.entries(wkdone).filter(([k,v])=>v && typeof v==="object" && k.startsWith(tid+"~")); }
+function dayKeys(tid,d){ const b=doneKey(tid,d); return Object.keys(wkdone).filter(k=>(k===b||k.startsWith(b+"~")) && wkdone[k] && typeof wkdone[k]==="object").sort(); }
+function doneThisWeek(t){
+  if(t.every===1) return dayKeys(t.id,todayISO()).length>=perDay(t);
+  if(t.every===0) return !!lastDate(t);
+  if(entriesFor(t.id).length) return true;
+  const l=lastDate(t); return !!(l && l>=curWk);
+}
+function ownerOf(t){ return t.owner && member(t.owner) ? t.owner : null; }
+const asgOf = tid => { const f=findTask(tid); if(f && ownerOf(f.t)) return f.t.owner; return (week && week.assign) ? week.assign[tid] : undefined; };
+function effAssign(){
+  const a=Object.assign({}, (week&&week.assign)||{});
+  const planned=new Set(planItems().map(x=>x.t.id));
+  allTasks().forEach(({t})=>{ if(ownerOf(t) && (t.id in a || planned.has(t.id))) a[t.id]=t.owner; });
+  return a;
+}
+function validAsg(tid){ const a=asgOf(tid); return a && member(a) ? a : null; }
+
+function planItems(){
+  const end=iso(addDays(curWk,6)), items=[];
+  allTasks().forEach(({r,t})=>{
+    if(isNeed(t) && !ownerOf(t)) return;
+    if(t.every===0){ if(!lastDate(t)) items.push({r,t,load:taskLoad(r,t)}); return; }
+    if(iso(dueDate(t))<=end) items.push({r,t,load:taskLoad(r,t)});
+  });
+  return items;
+}
+function computeAssign(prevAssign, fixed){
+  const ms=members().filter(m=>m.name && (m.share==null?1:m.share)>0);
+  const loads={}; ms.forEach(m=>loads[m.id]=0);
+  const assign={};
+  Object.entries(fixed||{}).forEach(([tid,mid])=>{ const f=findTask(tid); if(!f) return; assign[tid]=mid; if(mid in loads) loads[mid]+=taskLoad(f.r,f.t); });
+  planItems().forEach(it=>{ if(ownerOf(it.t) && !(it.t.id in assign)){ assign[it.t.id]=it.t.owner; if(it.t.owner in loads) loads[it.t.owner]+=it.load; } });
+  const items=planItems().filter(x=>!(x.t.id in assign)).sort((a,b)=>b.load-a.load || (a.t.id<b.t.id?-1:1));
+  for(const it of items){
+    const cands=ms.filter(m=>!isAdult(it.r,it.t) || m.adult!==false);
+    if(!cands.length){ assign[it.t.id]=null; continue; }
+    let best=null, bc=Infinity;
+    for(const m of cands){
+      const w=m.share==null?1:m.share;
+      let c=(loads[m.id]+it.load)/w;
+      if(cands.length>1 && prevAssign && prevAssign[it.t.id]===m.id) c+=it.load/w*0.75; // rotate who gets what
+      if(c<bc-1e-9){ bc=c; best=m; }
+    }
+    assign[it.t.id]=best.id; loads[best.id]+=it.load;
+  }
+  return assign;
+}
+function progress(mid){
+  let assigned=0, doneMin=0, n=0, nd=0;
+  if(week) Object.entries(effAssign()).forEach(([tid,a])=>{
+    if(a!==mid) return; const f=findTask(tid); if(!f) return;
+    const load=taskLoad(f.r,f.t); n++;
+    if(f.t.every===1){
+      const per=perDay(f.t), cnt=entriesFor(tid).length, got=Math.min(cnt,7*per)*unitMin(f.r,f.t);
+      doneMin+=got;
+      if(f.t.asNeeded){ assigned+=Math.max(load,got); if(cnt>=perWeek(f.t)) nd++; }
+      else { assigned+=load; if(cnt>=daysSoFar()*per) nd++; }
+    }
+    else { assigned+=load; if(doneThisWeek(f.t)){ doneMin+=load; nd++; } }
+  });
+  const credit=creditsIn(wkdone)[mid]||0;
+  return {assigned, doneMin, n, nd, credit};
+}
+function daysSoFar(){ return Math.min(7, Math.round((parse(todayISO())-parse(curWk))/86400000)+1); }
+// Credit is split evenly when a task was done together
+function creditsIn(entries){
+  const c={};
+  Object.values(entries||{}).forEach(v=>{
+    if(!v || typeof v!=="object" || !v.by) return;
+    const ppl=[v.by].concat(Array.isArray(v.with)?v.with.filter(x=>x && x!==v.by):[]);
+    const each=(v.min||0)/ppl.length; ppl.forEach(p=>c[p]=(c[p]||0)+each);
+  });
+  return c;
+}
+function scores(entries){
+  const c=creditsIn(entries);
+  return members().filter(m=>m.name).map(m=>{ const w=(m.share==null?1:m.share)||1; return {m,min:c[m.id]||0,pts:Math.round((c[m.id]||0)/w)}; }).sort((a,b)=>b.pts-a.pts);
+}
+function champ(entries){ const s=scores(entries); return s.length && s[0].pts>0 && (s.length<2 || s[0].pts>s[1].pts) ? s[0] : null; }
+
+// ---------------- Writes ----------------
+const chains={};
+function write(path,op,data){
+  if(!canWrite) return Promise.resolve();
+  chains[path]=(chains[path]||Promise.resolve()).then(()=>{ const ref=DB.doc(path); return op==="set"?ref.set(data):ref.update(data); })
+    .catch(e=>{ handleWriteError(e); });
+  return chains[path];
+}
+function handleWriteError(e){
+  const c=e&&e.code;
+  if(c==="invalid_argument"){ toast("That change couldn't be saved. You may only have view access."); }
+  else if(c==="quota_exceeded"){ toast("Storage is full, so that change wasn't saved."); }
+  else if(c==="revoked"){ canWrite=false; render(); }
+  else toast("Couldn't save that change. Check your connection and try again.");
+}
+function updateRooms(fn){ const rs=clone(cfg.rooms); fn(rs); return write(P.config,"update",{rooms:rs}); }
+function updateMembers(fn){ const ms=clone(cfg.members||[]); fn(ms); return write(P.config,"update",{members:ms}); }
+function patchTask(tid,patch){ return updateRooms(rs=>{ for(const r of rs){ const t=r.tasks.find(x=>x.id===tid); if(t){ Object.assign(t,patch); break; } } }); }
+const PD = () => "wkdone/"+wkId(curWk);
+const PW = () => "weeks/"+wkId(curWk);
+
+// ---------------- Startup ----------------
+// ---------------- Supabase connection ----------------
+const SB_URL="https://mjkkdvvckqbszsnsvnnt.supabase.co";
+const SB_KEY="sb_publishable_h2jVpVwZZwEoUGAed5TwvQ_Kq4Sj4O7";
+const sb = window.supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storageKey:"leslie-auth"}});
+let HH=null, HHINFO=null, USER_EMAIL="";
+
+// A small adapter that gives the app the same document-style API it had before,
+// backed by the Supabase tables (house_config, members, last_done, completions, week_plans).
+function makeSupaDB(){
+  const cache={}, subs={}, pending={};
+  const split = p => { const i=p.indexOf("/"); return {c:p.slice(0,i), id:p.slice(i+1)}; };
+  const wkOf = id => id.slice(1);
+  const keyParts = k => { const p=k.split("~"); return {task_id:p[0], d:p[1], slot:p[2]?Number(p[2]):1}; };
+  const fail = e => { if(e) throw e; };
+  async function fetchDoc(path){
+    const {c,id}=split(path);
+    if(c==="home" && id==="config"){
+      const [a,b]=await Promise.all([
+        sb.from("house_config").select("start_date,rooms,v").eq("household_id",HH).maybeSingle(),
+        sb.from("members").select("id,name,share,adult,user_id,sort,created_at").eq("household_id",HH).order("sort").order("created_at")]);
+      fail(a.error); fail(b.error);
+      if(!a.data) return null;
+      return {start:a.data.start_date, rooms:a.data.rooms||[], v:a.data.v,
+        members:(b.data||[]).map(m=>({id:m.id,name:m.name,share:Number(m.share),adult:m.adult,uid:m.user_id||null}))};
+    }
+    if(c==="home" && id==="last"){
+      const r=await sb.from("last_done").select("task_id,d,by_member").eq("household_id",HH); fail(r.error);
+      const o={_init:1}; (r.data||[]).forEach(x=>o[x.task_id]={d:x.d,by:x.by_member||null}); return o;
+    }
+    if(c==="wkdone"){
+      const ws=wkOf(id), we=iso(addDays(ws,6));
+      const r=await sb.from("completions").select("task_id,d,slot,by_member,with_members,minutes,prev,created_at").eq("household_id",HH).gte("d",ws).lte("d",we); fail(r.error);
+      const o={created:1};
+      (r.data||[]).forEach(x=>{ o[x.task_id+"~"+x.d+(x.slot>1?"~"+x.slot:"")]={by:x.by_member,with:x.with_members||[],min:Number(x.minutes),prev:x.prev||null,at:Date.parse(x.created_at)}; });
+      return o;
+    }
+    if(c==="weeks"){
+      const r=await sb.from("week_plans").select("assign,created_at").eq("household_id",HH).eq("week_start",wkOf(id)).maybeSingle(); fail(r.error);
+      return r.data ? {wk:wkOf(id), assign:r.data.assign||{}, created:Date.parse(r.data.created_at)} : null;
+    }
+    return null;
+  }
+  const snap = p => ({exists: cache[p]!=null, data:()=>cache[p]});
+  const notify = p => (subs[p]||[]).forEach(f=>{ try{ f(snap(p)); }catch(e){ console.error(e); } });
+  async function refresh(p){ try{ cache[p]=await fetchDoc(p); notify(p); }catch(e){ console.error(e); } }
+  function refreshSoon(p){ clearTimeout(pending[p]); pending[p]=setTimeout(()=>refresh(p),150); }
+  const live = pre => Object.keys(subs).filter(p=>p.startsWith(pre) && subs[p].length);
+
+  async function write(path, op, d){
+    const {c,id}=split(path);
+    if(c==="home" && id==="config"){
+      const patch={};
+      if(d.rooms!==undefined) patch.rooms=d.rooms;
+      if(d.start!==undefined) patch.start_date=d.start;
+      if(d.v!==undefined) patch.v=d.v;
+      if(Object.keys(patch).length){ patch.updated_at=new Date().toISOString(); fail((await sb.from("house_config").update(patch).eq("household_id",HH)).error); }
+      if(d.members!==undefined){
+        const cur=(cache[path] && cache[path].members)||[];
+        for(let i=0;i<d.members.length;i++){
+          const m=d.members[i], old=cur.find(x=>x.id===m.id);
+          const row={id:m.id, household_id:HH, name:m.name||"", share:m.share==null?1:m.share, adult:m.adult!==false, sort:i};
+          if(m.uid && m.uid===myUid && (!old || !old.uid)) row.user_id=m.uid;
+          fail((await sb.from("members").upsert(row,{onConflict:"id"})).error);
+        }
+        const keep=new Set(d.members.map(m=>m.id)), gone=cur.filter(m=>!keep.has(m.id)).map(m=>m.id);
+        if(gone.length) fail((await sb.from("members").delete().eq("household_id",HH).in("id",gone)).error);
+      }
+      return refresh(path);
+    }
+    if(c==="home" && id==="last"){
+      if(op==="set") fail((await sb.from("last_done").delete().eq("household_id",HH)).error);
+      for(const [k,v] of Object.entries(d)){
+        if(k.startsWith("_")) continue;
+        if(v==null) fail((await sb.from("last_done").delete().eq("household_id",HH).eq("task_id",k)).error);
+        else fail((await sb.from("last_done").upsert({household_id:HH,task_id:k,d:v.d,by_member:v.by||null},{onConflict:"household_id,task_id"})).error);
+      }
+      return refresh(path);
+    }
+    if(c==="wkdone"){
+      if(op==="set"){ const ws=wkOf(id); fail((await sb.from("completions").delete().eq("household_id",HH).gte("d",ws).lte("d",iso(addDays(ws,6)))).error); }
+      for(const [k,v] of Object.entries(d)){
+        if(!k.includes("~")) continue;
+        const kp=keyParts(k);
+        if(v==null) fail((await sb.from("completions").delete().eq("household_id",HH).eq("task_id",kp.task_id).eq("d",kp.d).eq("slot",kp.slot)).error);
+        else if(v.by) fail((await sb.from("completions").upsert(Object.assign({household_id:HH,by_member:v.by,with_members:v.with||[],minutes:v.min||0,prev:v.prev||null},kp),{onConflict:"household_id,task_id,d,slot"})).error);
+        else if(v.with!==undefined) fail((await sb.from("completions").update({with_members:v.with||[]}).eq("household_id",HH).eq("task_id",kp.task_id).eq("d",kp.d).eq("slot",kp.slot)).error);
+      }
+      return refresh(path);
+    }
+    if(c==="weeks"){
+      let assign;
+      if(op==="set") assign=d.assign||{};
+      else { const cur=cache[path] || await fetchDoc(path); assign=Object.assign({}, (cur&&cur.assign)||{}, d.assign||{}); }
+      fail((await sb.from("week_plans").upsert({household_id:HH,week_start:wkOf(id),assign},{onConflict:"household_id,week_start"})).error);
+      return refresh(path);
+    }
+  }
+  function startRealtime(){
+    const ch=sb.channel("household-"+HH);
+    const on=(table,fn)=>ch.on("postgres_changes",{event:"*",schema:"public",table},fn);
+    on("house_config",()=>refreshSoon("home/config"));
+    on("members",()=>refreshSoon("home/config"));
+    on("last_done",()=>refreshSoon("home/last"));
+    on("completions",()=>live("wkdone/").forEach(refreshSoon));
+    on("week_plans",()=>live("weeks/").forEach(refreshSoon));
+    ch.subscribe();
+  }
+  // Catch up whenever the app comes back to the foreground, plus a gentle poll as a safety net
+  const all=()=>Object.keys(subs).filter(p=>subs[p].length).forEach(refreshSoon);
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) all(); });
+  setInterval(()=>{ if(!document.hidden) all(); },60000);
+  return { startRealtime, doc(path){ return {
+    get: async()=>{ cache[path]=await fetchDoc(path); return snap(path); },
+    set: d=>write(path,"set",d),
+    update: d=>write(path,"update",d),
+    onSnapshot:(f)=>{ (subs[path]=subs[path]||[]).push(f); if(path in cache) setTimeout(()=>f(snap(path))); else refresh(path); return ()=>{ subs[path]=(subs[path]||[]).filter(x=>x!==f); }; },
+    acquire: async()=>({acquired:true})
+  }; } };
+}
+
+// ---------------- Sign-in ----------------
+let authMode="signin", authMsg="", joinPreview=null;
+function authHTML(){
+  const box=inner=>`<div class="authwrap"><div class="authcard">
+    <div class="brand"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8v10H3z" fill="var(--roof)"/><rect x="10" y="14" width="4" height="7" fill="var(--door)"/></svg>Leslie</div>${inner}
+    ${authMsg?`<p class="authmsg" role="alert">${esc(authMsg)}</p>`:""}</div></div>`;
+  if(authMode==="signin"||authMode==="signup"){
+    const up=authMode==="signup";
+    return box(`<h1 class="head" style="font-size:2rem">${up?"Create your account":"Welcome home."}</h1>
+      <p class="lede" style="margin-bottom:18px">${up?"Use any email and a password you'll remember. Then you'll enter your household's invite code.":"Sign in to see your week."}</p>
+      <form id="authForm" class="authform" autocomplete="on">
+        <label>Email<input type="email" id="auEmail" autocomplete="email" required></label>
+        <label>Password<input type="password" id="auPass" autocomplete="${up?"new-password":"current-password"}" minlength="6" required></label>
+        <button class="btn" type="submit">${up?"Create account":"Sign in"}</button>
+      </form>
+      <p style="margin-top:16px"><button class="linky" data-authmode="${up?"signin":"signup"}" type="button">${up?"Already have an account? Sign in":"New here? Create an account"}</button></p>`);
+  }
+  if(authMode==="join"){
+    if(joinPreview) return box(`<h1 class="head" style="font-size:2rem">Who are you?</h1>
+      <p class="lede" style="margin-bottom:14px">Joining <strong>${esc(joinPreview.name)}</strong>. Tap your name.</p>
+      <div class="pick">${joinPreview.people.map(p=>`<button data-joinas="${esc(p.id)}" type="button">${esc(p.name)}</button>`).join("")}</div>
+      <div class="row"><label style="flex:1">${joinPreview.people.length?"Not listed? Your name":"Your name"}<input type="text" id="joinName"></label><button class="btn" id="joinNew" type="button">Join</button></div>
+      <p style="margin-top:14px"><button class="linky" data-authmode="join" type="button">Use a different code</button></p>`);
+    return box(`<h1 class="head" style="font-size:2rem">Join your household</h1>
+      <p class="lede" style="margin-bottom:14px">Enter the invite code someone in your house shared with you.</p>
+      <div class="row"><label style="flex:1">Invite code<input type="text" id="joinCode" autocapitalize="characters" autocomplete="off" maxlength="6" style="text-transform:uppercase;letter-spacing:.15em"></label><button class="btn" id="joinGo" type="button">Continue</button></div>
+      <p style="margin-top:14px"><button class="linky" id="signOut" type="button">Sign out</button></p>`);
+  }
+  return box(`<p>${esc(authMsg||"Something went wrong.")}</p>`);
+}
+function showAuth(mode,msg){ authMode=mode; authMsg=msg||""; const a=document.getElementById("auth"); a.innerHTML=authHTML(); a.hidden=false; const f=a.querySelector("input"); if(f) f.focus(); }
+function hideAuth(){ const a=document.getElementById("auth"); a.hidden=true; a.innerHTML=""; }
+
+async function authFlow(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ showAuth("signin"); return; }
+  myUid=session.user.id; USER_EMAIL=session.user.email||"";
+  const mem=await sb.from("members").select("household_id").eq("user_id",myUid).limit(1);
+  if(mem.error){ showAuth("error","Couldn't reach the server. Check your connection and reload."); return; }
+  if(!mem.data || !mem.data.length){ joinPreview=null; showAuth("join"); return; }
+  HH=mem.data[0].household_id;
+  const h=await sb.from("households").select("name,invite_code,tz").eq("id",HH).single();
+  HHINFO=h.data||{name:"Home",invite_code:""};
+  hideAuth(); startApp();
+}
+let appStarted=false;
+function startApp(){
+  if(appStarted) return; appStarted=true;
+  DB=makeSupaDB(); remote=true; canWrite=true; isOwner=true;
+  document.getElementById("sync").textContent="Synced live across everyone's phones.";
+  subscribeAll(); DB.startRealtime();
+}
+document.addEventListener("submit",async e=>{
+  if(e.target.id!=="authForm") return; e.preventDefault();
+  const email=document.getElementById("auEmail").value.trim(), password=document.getElementById("auPass").value;
+  const btn=e.target.querySelector("button[type=submit]"); btn.disabled=true;
+  let r;
+  if(authMode==="signup"){
+    r=await sb.auth.signUp({email,password});
+    if(!r.error && !r.data.session){ btn.disabled=false; showAuth("signin","Account created. Check your email to confirm it, then sign in."); return; }
+  } else r=await sb.auth.signInWithPassword({email,password});
+  btn.disabled=false;
+  if(r.error){ authMsg=r.error.message; showAuth(authMode,r.error.message); return; }
+  authFlow();
+});
+document.addEventListener("click",async e=>{
+  const t=e.target;
+  const am=t.closest("[data-authmode]"); if(am){ joinPreview=null; showAuth(am.dataset.authmode); return; }
+  if(t.id==="signOut"){ await sb.auth.signOut(); location.reload(); return; }
+  if(t.id==="joinGo"){
+    const code=document.getElementById("joinCode").value.trim().toUpperCase(); if(!code) return;
+    const r=await sb.rpc("household_preview",{p_code:code});
+    if(r.error || !r.data){ showAuth("join","That code didn't match a household. Check it and try again."); return; }
+    joinPreview=Object.assign({code},r.data); showAuth("join"); return;
+  }
+  const ja=t.closest("[data-joinas]");
+  if(ja || t.id==="joinNew"){
+    const name=ja?null:(document.getElementById("joinName").value.trim());
+    if(!ja && !name){ document.getElementById("joinName").focus(); return; }
+    const r=await sb.rpc("join_household",{p_code:joinPreview.code, p_member_id:ja?ja.dataset.joinas:null, p_new_name:name});
+    if(r.error){ showAuth("join",r.error.message); return; }
+    if(ja) lsSet("home-base-me",ja.dataset.joinas);
+    authFlow(); return;
+  }
+  if(t.id==="copyInvite"){
+    const txt=`Join our house on Leslie: ${location.origin+location.pathname}\nCreate an account, then enter invite code ${HHINFO.invite_code}.`;
+    try{ await navigator.clipboard.writeText(txt); toast("Invite copied. Paste it in a text."); }catch(err){ toast("Invite code: "+HHINFO.invite_code); }
+    return;
+  }
+  if(t.id==="appSignOut"){ await sb.auth.signOut(); lsSet("home-base-me",null); location.reload(); return; }
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Enter" && (e.target.id==="joinCode")){ e.preventDefault(); document.getElementById("joinGo").click(); } if(e.key==="Enter" && e.target.id==="joinName"){ e.preventDefault(); document.getElementById("joinNew").click(); } });
+
+function subscribeAll(){
+  const err=e=>{ if(e && e.code==="revoked"){ canWrite=false; render(); } };
+  DB.doc(P.config).onSnapshot(s=>{
+    cfg = (s.exists && s.data()) ? clone(s.data()) : null;
+    phase = cfg ? "ready" : "waiting";
+    if(cfg){ cfg.members=cfg.members||[]; resolveMe(); if((cfg.v||4)<5) upgrade5(); else if(cfg.v<6) upgrade6(); else if(cfg.v<7) upgrade7(); else if(replanAfterUpgrade){ replanAfterUpgrade=false; setTimeout(async()=>{ for(let i=0;i<5;i++){ if(await maybePlan(true)) return; await new Promise(r=>setTimeout(r,1500)); } },0); } if(!selRoom || !findRoom(selRoom)) selRoom=(cfg.rooms.find(r=>r.type==="kitchen")||cfg.rooms[0]||{}).id; }
+    maybePlan(); render();
+  }, err);
+  DB.doc(P.last).onSnapshot(s=>{ last=(s.exists && s.data()) ? clone(s.data()) : {}; render(); }, err);
+  subscribeWeek();
+}
+let unsubWeek=[];
+function subscribeWeek(){
+  unsubWeek.forEach(u=>{ try{u();}catch(e){} });
+  curWk=weekStart(todayISO()); weekLoaded=false; week=null; wkdone={};
+  const err=()=>{};
+  unsubWeek=[
+    DB.doc(PW()).onSnapshot(s=>{ const d=s.exists?s.data():null; week=(d && d.assign)?clone(d):null; weekLoaded=true; maybePlan(); render(); }, err),
+    DB.doc(PD()).onSnapshot(s=>{ const d=s.exists?s.data():null; wkdone=d?clone(d):{}; if(!d || !d.created) ensureDoneDoc(); render(); }, err)
+  ];
+  hist={};
+  for(let i=1;i<=12;i++){ const w=shiftWeek(curWk,-i); DB.doc("wkdone/"+wkId(w)).get().then(s=>{ const d=s.exists?s.data():null; if(d && d.created){ hist[w]=clone(d); render(); } }).catch(()=>{}); }
+}
+let donePromise=null;
+function ensureDoneDoc(){
+  if(!canWrite) return Promise.resolve();
+  if(ensuringDone) return donePromise;
+  ensuringDone=true; donePromise=_ensureDoneDoc(); return donePromise;
+}
+async function _ensureDoneDoc(){
+  const path=PD();
+  try{
+    const lease=await DB.doc(path).acquire({holder:meId||myUid||rid(), ttlMs:8000});
+    if(lease.acquired){ const s=await DB.doc(path).get(); const d=s.exists?s.data():null; if(!d || !d.created) await DB.doc(path).set(Object.assign({}, d||{}, {created:Date.now()})); }
+  }catch(e){}
+  ensuringDone=false;
+}
+async function maybePlan(force){
+  if(!cfg || !weekLoaded || planning || !canWrite) return false;
+  if(week && !force) return false;
+  if(!members().some(m=>m.name)) return false;
+  planning=true; let wrote=false;
+  const path=PW();
+  try{
+    const lease=await DB.doc(path).acquire({holder:meId||myUid||rid(), ttlMs:8000});
+    if(lease.acquired){
+      const s=await DB.doc(path).get(); const d=s.exists?s.data():null;
+      if(force || !d || !d.assign){
+        let prev=null; try{ const ps=await DB.doc("weeks/"+wkId(shiftWeek(curWk,-1))).get(); if(ps.exists) prev=(ps.data()||{}).assign||null; }catch(e){}
+        const fixed={};
+        if(force && week && week.assign){ Object.entries(week.assign).forEach(([tid,a])=>{ if(entriesFor(tid).length && a) fixed[tid]=a; }); }
+        Object.entries(wkdone).forEach(([k,v])=>{ if(v && typeof v==="object" && v.by){ const tid=k.split("~")[0]; if(!(tid in fixed)) fixed[tid]=v.by; } });
+        await DB.doc(path).set({wk:curWk, assign:computeAssign(prev,fixed), created:Date.now()});
+        wrote=true;
+      }
+    }
+  }catch(e){ handleWriteError(e); }
+  planning=false;
+  return wrote;
+}
+let rebalancing=false;
+async function rebalance(){
+  rebalancing=true; render(); toast("Rebalancing the week…");
+  let ok=false;
+  for(let i=0;i<5 && !ok;i++){
+    ok=await maybePlan(true);
+    if(!ok) await new Promise(r=>setTimeout(r,1500));
+  }
+  rebalancing=false; render();
+  toast(ok ? "Week rebalanced. Everyone's lists are updated." : "Couldn't rebalance right now. Try again in a few seconds.");
+}
+let upgrading=false, replanAfterUpgrade=false;
+function upgrade5(){
+  if(upgrading || !canWrite || !isOwner) return; upgrading=true;
+  const ms=clone(cfg.members), rooms=clone(cfg.rooms);
+  const owner = ms.find(m=>myUid && m.uid===myUid) || ms.find(m=>m.id===meId) || ms[0];
+  let zack = ms.find(m=>/^zack\b/i.test(m.name||""));
+  if(!zack){ zack={id:"m"+rid(),name:"Zack",uid:null,share:1,adult:true}; ms.push(zack); }
+  if(!rooms.some(r=>r.type==="meals")){ const r=makeRoom("Meals and groceries","meals","other",1); r.tasks.forEach(t=>{ if(/cook dinner/i.test(t.title) && owner) t.owner=owner.id; }); rooms.push(r); }
+  if(!rooms.some(r=>r.type==="pet")){ const r=makeRoom("Oppie","pet","other",1); r.tasks.forEach(t=>{ if(/feed oppie/i.test(t.title)) t.owner=zack.id; if(/walk/i.test(t.title) && owner) t.owner=owner.id; }); rooms.push(r); }
+  replanAfterUpgrade=true;
+  write(P.config,"update",{rooms,members:ms,v:5}).then(()=>{ upgrading=false; });
+}
+function upgrade7(){
+  if(upgrading || !canWrite || !isOwner) return; upgrading=true;
+  replanAfterUpgrade=true;
+  write(P.config,"update",{v:7}).then(()=>{ upgrading=false; });
+}
+function upgrade6(){
+  if(upgrading || !canWrite || !isOwner) return; upgrading=true;
+  const rooms=clone(cfg.rooms);
+  rooms.forEach(r=>r.tasks.forEach(t=>{ if(t.asNeeded && t.perWeek==null) t.perWeek=5; }));
+  replanAfterUpgrade=true;
+  write(P.config,"update",{rooms,v:6}).then(()=>{ upgrading=false; });
+}
+function resolveMe(){
+  const ms=members();
+  // A name picked on this device wins, so a parent can switch to a kid on their own phone
+  const saved=lsGet("home-base-me");
+  let m = ms.find(x=>x.id===saved && (!x.uid || !myUid || x.uid===myUid)) || null;
+  if(!m && myUid && !switching) m = ms.find(x=>x.uid===myUid) || null;
+  if(m && myUid && !m.uid && !ms.some(x=>x.uid===myUid) && canWrite && !linking){ linking=true; const id=m.id; updateMembers(a=>{ const x=a.find(y=>y.id===id); if(x) x.uid=myUid; }).then(()=>{linking=false;}); }
+  meId = m ? m.id : null;
+}
+const findRoom = id => (cfg?cfg.rooms:[]).find(r=>r.id===id);
+
+// ---------------- How-to guides ----------------
+const DRYER_ART = `<svg viewBox="0 0 420 300" class="howart" role="img" aria-label="Four steps: unplug the dryer, loosen the duct clamp, brush out the duct, clear the outside flap">
+<g font-family="Figtree, system-ui, sans-serif" font-size="12" font-weight="700" fill="var(--ink)">
+ <!-- 1 unplug -->
+ <rect x="4" y="4" width="200" height="140" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+ <text x="14" y="22">1. Unplug it</text>
+ <rect x="30" y="40" width="80" height="90" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>
+ <circle cx="70" cy="90" r="24" fill="none" stroke="var(--ink)" stroke-width="2"/><circle cx="70" cy="90" r="15" fill="var(--below)"/>
+ <rect x="30" y="40" width="80" height="14" fill="var(--below)" stroke="var(--ink)" stroke-width="2"/>
+ <rect x="150" y="60" width="30" height="40" rx="4" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>
+ <rect x="159" y="72" width="3" height="8" fill="var(--ink)"/><rect x="168" y="72" width="3" height="8" fill="var(--ink)"/>
+ <path d="M110 110 C125 110 125 88 135 88" fill="none" stroke="var(--ink)" stroke-width="3"/>
+ <rect x="133" y="82" width="10" height="12" rx="2" fill="var(--ink)"/>
+ <path d="M139 70 l6 -8 M148 72 l6 -6" stroke="var(--over)" stroke-width="3" stroke-linecap="round"/>
+ <!-- 2 loosen clamp -->
+ <rect x="216" y="4" width="200" height="140" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+ <text x="226" y="22">2. Loosen the duct clamp</text>
+ <rect x="232" y="40" width="70" height="90" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>
+ <path d="M302 85 q8 -10 16 0 q8 10 16 0 q8 -10 16 0 q8 10 16 0 q8 -10 16 0 l10 0" fill="none" stroke="var(--muted)" stroke-width="16" stroke-linecap="butt"/>
+ <line x1="398" y1="36" x2="398" y2="136" stroke="var(--ink)" stroke-width="4"/>
+ <circle cx="308" cy="85" r="14" fill="none" stroke="var(--door)" stroke-width="3"/>
+ <path d="M312 118 a10 10 0 1 1 10 -10" fill="none" stroke="var(--ink)" stroke-width="2"/><path d="M322 108 l3 -7 l-8 2z" fill="var(--ink)"/>
+ <text x="330" y="124" font-size="10" font-weight="600" fill="var(--muted)">loosen</text>
+ <!-- 3 brush -->
+ <rect x="4" y="156" width="200" height="140" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+ <text x="14" y="174">3. Brush out the duct</text>
+ <rect x="20" y="200" width="170" height="44" rx="22" fill="var(--below)" stroke="var(--ink)" stroke-width="2"/>
+ <g fill="var(--muted)"><circle cx="120" cy="226" r="6"/><circle cx="140" cy="218" r="5"/><circle cx="160" cy="230" r="7"/><circle cx="104" cy="232" r="4"/></g>
+ <line x1="8" y1="222" x2="84" y2="222" stroke="var(--ink)" stroke-width="3"/>
+ <g stroke="var(--door)" stroke-width="3" stroke-linecap="round"><path d="M84 208 v28 M90 206 v32 M96 206 v32 M102 208 v28"/></g>
+ <path d="M60 262 a14 8 0 1 0 28 0" fill="none" stroke="var(--ink)" stroke-width="2"/><path d="M88 262 l-2 -7 l7 3z" fill="var(--ink)"/>
+ <text x="98" y="266" font-size="10" font-weight="600" fill="var(--muted)">twist clockwise</text>
+ <!-- 4 outside flap -->
+ <rect x="216" y="156" width="200" height="140" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+ <text x="226" y="174">4. Clear the outside flap</text>
+ <g stroke="var(--line)" stroke-width="2"><line x1="226" y1="196" x2="406" y2="196"/><line x1="226" y1="214" x2="406" y2="214"/><line x1="226" y1="232" x2="406" y2="232"/><line x1="226" y1="250" x2="406" y2="250"/><line x1="226" y1="268" x2="406" y2="268"/></g>
+ <rect x="290" y="204" width="52" height="40" rx="4" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>
+ <path d="M292 244 l48 0 l6 22 l-60 0z" fill="var(--door)" stroke="var(--ink)" stroke-width="2"/>
+ <g fill="var(--muted)"><circle cx="300" cy="276" r="4"/><circle cx="318" cy="282" r="5"/><circle cx="334" cy="274" r="3"/></g>
+ <text x="352" y="238" font-size="10" font-weight="600" fill="var(--muted)">flap swings</text><text x="352" y="250" font-size="10" font-weight="600" fill="var(--muted)">freely</text>
+</g></svg>`;
+
+const HOWTO = [
+ {re:/dryer vent/i, art:DRYER_ART, steps:[
+  "Unplug the dryer. For a gas dryer, also close the gas valve behind it, and take care not to kink or loosen the gas line.",
+  "Pull the dryer away from the wall and loosen the clamp holding the duct to the back of the dryer (usually a screwdriver or a squeeze clamp).",
+  "Vacuum the lint out of the dryer's exhaust opening and both ends of the duct.",
+  "Feed a dryer vent brush on its flexible rods through the duct, twisting clockwise so the rods don't unscrew, and pull the lint back out.",
+  "Outside, lift the vent flap, clear out lint, and make sure the flap opens and closes freely.",
+  "Reattach the duct, push the dryer back without crushing the duct, and run it on air-only for 10 minutes. You should feel strong airflow at the outside vent."],
+  note:"Vent brush kits are cheap at hardware stores. If your duct is white vinyl or thin foil, replace it with rigid or semi-rigid metal duct; plastic ducts are a fire risk. If you ever smell gas, leave and call the gas company from outside."},
+ {re:/flush the water heater/i, steps:[
+  "Turn off the power at the breaker (electric) or set the gas control to Pilot or Vacation (gas).",
+  "Close the cold water valve on the pipe going into the top of the tank.",
+  "Open a hot water faucet nearby so air can get in while it drains.",
+  "Attach a garden hose to the drain valve at the bottom and run the other end to a floor drain or outside.",
+  "Open the drain valve. The water can be scalding, so let it cool for a few hours first if you can.",
+  "When it runs clear, open the cold supply for a minute to stir up the last sediment, then let it drain again.",
+  "Close the drain valve, remove the hose, and turn the cold supply back on. Wait until the open hot faucet runs smoothly with no sputtering, then close it.",
+  "Only then restore power or gas. Powering an electric heater with an empty tank burns out its elements."]},
+ {re:/relief valve/i, steps:[
+  "Put a bucket under the pipe that runs down from the valve on the side or top of the water heater.",
+  "Lift the valve's lever for a few seconds. Hot water should gush out and stop when you let go. Stand clear.",
+  "If nothing comes out, or it keeps dripping afterward, call a plumber. This valve keeps the tank from over-pressurizing."]},
+ {re:/sump pump/i, steps:[
+  "Remove the pit cover and make sure the pump is plugged in.",
+  "Slowly pour a bucket of water into the pit until the float rises.",
+  "The pump should switch on, empty the pit, and shut off on its own.",
+  "Go outside and check that water is coming out of the discharge pipe.",
+  "If it hums without pumping, runs nonstop, or doesn't start, call a plumber before the next big rain."]},
+ {re:/furnace filter/i, steps:[
+  "Turn the thermostat off.",
+  "Find the filter: usually in a slot where the big duct meets the furnace, or behind a large return grille on a wall or ceiling.",
+  "Slide the old filter out and note the size printed on its edge (for example 16x25x1). Keep a few spares.",
+  "Slide the new one in with the airflow arrow pointing toward the furnace.",
+  "Write today's date on the edge and turn the thermostat back on."]},
+ {re:/toilet for leaks|check the toilet/i, steps:[
+  "Put a few drops of food coloring in the tank. Don't flush for 15 minutes.",
+  "If color shows up in the bowl, the flapper is leaking.",
+  "To replace it: close the water valve behind the toilet and flush to empty the tank.",
+  "Unhook the old flapper from the two pegs and the chain. Take it to the store to match the size.",
+  "Hook on the new one, attach the chain with a little slack, turn the water on, and test."]},
+ {re:/outdoor faucets/i, steps:[
+  "Find the indoor shutoff valve for each outdoor faucet, usually in the basement where the pipe goes through the wall.",
+  "Close it.",
+  "Outside, disconnect and drain the hose.",
+  "Open the outdoor faucet so water drains out. If the indoor valve has a small cap on the side, open it over a bucket to drain the rest, then close it.",
+  "Leave the outdoor faucet open for the winter."]},
+ {re:/refrigerator coils/i, steps:[
+  "Unplug the fridge.",
+  "Pop off the grille at the bottom front, or pull the fridge out to reach the coils on the back.",
+  "Loosen dust with a long coil brush and vacuum it up.",
+  "Replace the grille, push the fridge back, and plug it in."]},
+ {re:/washer hoses/i, steps:[
+  "Pull the washer out enough to see the hoses. Look for bulges, cracks, or rust near the ends.",
+  "To replace: turn off both water valves behind the washer and have a bucket and towel ready.",
+  "Unscrew the old hoses from the valves and the washer.",
+  "Screw on braided stainless steel hoses hand-tight, then a quarter turn more with pliers.",
+  "Turn the water on and check for drips before pushing the washer back."]},
+ {re:/auto-reverse/i, steps:[
+  "Lay a 2x4 flat on the floor where the door comes down.",
+  "Close the door with the remote. It should touch the board and reverse right away.",
+  "Open the door and close it again while waving a broom handle through the sensor beam near the floor. It should reverse.",
+  "If either test fails, stop using the auto-close and call a garage door technician."]}
+];
+function howtoFor(t){ return HOWTO.find(h=>h.re.test(t.title)) || null; }
+const hasHowto = t => !!(howtoFor(t) || (t.video && t.video.url));
+const videoSearch = t => "https://www.youtube.com/results?search_query="+encodeURIComponent("how to "+t.title.replace(/\(.*?\)/g,""));
+function safeUrl(u){ try{ const x=new URL(String(u).trim()); return (x.protocol==="https:"||x.protocol==="http:") ? x.href : null; }catch(e){ return null; } }
+let howtoOpen=null;
+function howtoSheet(){
+  const f=findTask(howtoOpen); if(!f){ howtoOpen=null; return ""; }
+  const t=f.t, h=howtoFor(t), v=t.video && safeUrl(t.video.url) ? t.video : null;
+  let host=""; if(v){ try{ host=new URL(v.url).hostname.replace(/^www\./,""); }catch(e){} }
+  return `<div class="overlay" data-howbg role="dialog" aria-modal="true" aria-labelledby="hwT"><div class="sheet howto">
+    <div class="where">${esc(f.r.name)}</div><h2 id="hwT">${esc(t.title)}</h2>
+    ${h && h.art ? h.art : ""}
+    ${h ? `<ol class="steps">${h.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>${h.note?`<p class="hnote">${esc(h.note)}</p>`:""}` : (t.tip?`<p>${esc(t.tip)}</p>`:"")}
+    <div class="vid"><strong>Family video</strong>
+      ${v ? `<p><a href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">Watch on ${esc(host||"the web")}</a>${v.by && member(v.by)?`<span class="sub"> chosen by ${esc(mName(member(v.by)))}</span>`:""}</p>`
+          : `<p class="sub">No video picked yet. Find one you like and paste the link below so everyone uses the same one.</p>`}
+      <p><a href="${videoSearch(t)}" target="_blank" rel="noopener noreferrer">Search YouTube for a tutorial</a></p>
+      ${canWrite?`<div class="row"><label style="flex:1 1 220px">${v?"Replace with":"Paste a link"}<input type="text" id="hvUrl" placeholder="https://" inputmode="url" autocomplete="off"></label>
+        <button class="btn" id="hvSave" data-tid="${t.id}" type="button">Save link</button>${v?`<button class="linky" id="hvRemove" data-tid="${t.id}" type="button">Remove</button>`:""}</div>`:""}
+    </div>
+    <p style="margin:16px 0 0;text-align:right"><button class="btn soft" data-howclose type="button">Close</button></p>
+  </div></div>`;
+}
+
+// ---------------- Rendering ----------------
+let pendingRender=false;
+function render(){
+  const a=document.activeElement;
+  if(a && a.closest && a.closest("#view,#overlay") && a.matches('input[type=text],input[type=number]')){ pendingRender=true; return; }
+  pendingRender=false;
+  renderHeader();
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.view===view)));
+  const v=document.getElementById("view");
+  if(phase==="loading"){ v.innerHTML=`<p class="empty">Loading your house…</p>`; renderOverlay(); return; }
+  if(phase==="waiting"){ v.innerHTML=`<p class="empty">This house hasn't been set up yet. Ask whoever shared it with you to open it first.</p>`; renderOverlay(); return; }
+  const banner = !canWrite ? `<div class="banner">You can see the plan but can't check things off. Ask the person who set this up to share it with you as an Editor.</div>` : "";
+  v.innerHTML = banner + (view==="my"?viewMy():view==="rooms"?viewRooms():view==="family"?viewFamily():viewSettings());
+  if(view==="settings" && mQuery) applySearch();
+  renderOverlay();
+}
+document.addEventListener("focusout",()=>{ setTimeout(()=>{ if(pendingRender) render(); },0); });
+
+function renderHeader(){
+  const head=document.getElementById("head"), lede=document.getElementById("lede"), who=document.getElementById("who");
+  const me=member(meId);
+  who.innerHTML = me ? `${chip(me)} <button class="linky" data-switch type="button">Not you?</button>` : "";
+  if(phase!=="ready"){ head.textContent = phase==="waiting"?"Almost there.":"Loading your house…"; lede.textContent=""; return; }
+  if(view==="my" && me){
+    const p=progress(me.id);
+    if(!week){ head.textContent=`Hi, ${mName(me)}.`; lede.textContent="Setting up this week's plan…"; }
+    else if(!p.n){ head.textContent=`Nothing on your list, ${mName(me)}.`; lede.textContent="Pitch in on anything up for grabs below. It all counts toward your share."; }
+    else if(p.doneMin>=p.assigned-0.01){ head.textContent=`You're done for the week, ${mName(me)}.`; lede.textContent="Nice work. Anything extra you do still counts toward your share."; }
+    else { head.textContent=`${mName(me)}, ${hrs(p.assigned-p.doneMin)} left this week`; lede.textContent=`${p.nd} of ${p.n} tasks done. The week runs Monday to Sunday.`; }
+    return;
+  }
+  let over=0,today=0; allTasks().forEach(({t})=>{ const s=status(t); if(s.key==="overdue") over++; else if(s.key==="today") today++; });
+  head.textContent = over ? `${over} overdue across the house` : today ? `${today} due today across the house` : "The house is caught up.";
+  lede.textContent = "Every task is split fairly between the people who live here. Anyone can check off anything, and it counts for whoever did it.";
+}
+
+function dotsHTML(t){
+  let h=""; const today=todayISO();
+  const per=perDay(t);
+  for(let i=0;i<7;i++){ const d=iso(addDays(curWk,i)); const ks=dayKeys(t.id,d); const c=ks.length;
+    const who=ks.map(k=>mName(member(wkdone[k].by))).join(", ");
+    h+=`<i class="${c>=per?"f":c>0?"h":""} ${d===today?"t":""}" title="${esc(parse(d).toLocaleDateString(undefined,{weekday:"long"}))}${c?": "+esc(who):""}"></i>`; }
+  return `<span class="dots" aria-hidden="true">${h}</span>`;
+}
+function taskRow(r,t,o){
+  o=o||{};
+  const s=status(t), on=doneThisWeek(t), L=last[t.id];
+  const a=validAsg(t.id);
+  const lastTxt = L && L.d ? `Last done ${fmt(L.d)}${L.by && member(L.by) ? " by "+esc(mName(member(L.by))) : ""}` : "";
+  let label=s.label, cls="s-"+s.key;
+  if(on && t.every!==0 && t.every!==1){ label="Done this week"; cls+=" isdone"; }
+  if(isNeed(t)){
+    const c=dayKeys(t.id,todayISO()).length, wk=taskStats(t.id).thisWeek;
+    label = c ? `${c} today, ${wk} this week` : `${wk} this week`;
+    if(c) cls+=" isdone";
+  } else if(t.every===1){
+    const per=perDay(t), c=dayKeys(t.id,todayISO()).length;
+    if(on){ cls+=" isdone"; label = per>1 ? (c>per?`${c} today`:`${c} of ${per} today`) : "Done today"; }
+    else if(c>0){ label=`${c} of ${per} today`; }
+  }
+  let withSel="";
+  if(t.together && t.every===1 && canWrite){
+    const ks=dayKeys(t.id,todayISO()); const k=ks[ks.length-1];
+    if(k){ const e=wkdone[k]; const cur=(Array.isArray(e.with)&&e.with[0])||"";
+      withSel=`<label class="with">${esc(mName(member(e.by)))} went with <select data-with="${esc(k)}"><option value="">nobody</option>${members().filter(m=>m.name && m.id!==e.by).map(m=>`<option value="${m.id}" ${cur===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>`; }
+  }
+  let edit="";
+  if(openEdit===t.id){
+    const opts=`<option value="">Up for grabs</option>`+members().filter(m=>m.name).map(m=>`<option value="${m.id}" ${a===m.id?"selected":""}>${esc(m.name)}</option>`).join("");
+    edit=`<div class="edit">
+      ${historyHTML(t)}
+      <label>How often<select data-freq="${t.id}">${freqOptions(t)}</select></label>
+      <label>Minutes${taskCount(r,t)>1?" per room":""}<input type="number" min="1" max="600" data-min="${t.id}" value="${taskMin(t)}"></label>
+      ${r.count>1?`<label>How many rooms<input type="number" min="1" max="20" data-tcount="${t.id}" value="${taskCount(r,t)}"></label>`:""}
+      ${t.every===1 && !t.asNeeded?`<label>Times a day<input type="number" min="1" max="10" data-per="${t.id}" value="${perDay(t)}"></label>`:""}
+      <label>Owner<select data-owner="${t.id}"><option value="">Nobody, rotate it</option>${members().filter(m=>m.name).map(m=>`<option value="${m.id}" ${t.owner===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>
+      ${week && !ownerOf(t)?`<label>This week<select data-asg="${t.id}">${opts}</select></label>`:""}
+      <button class="btn soft" data-howto="${t.id}" type="button">${hasHowto(t)?"How-to guide":"Add a how-to video"}</button>
+      <label>Last done<input type="date" data-last="${t.id}" value="${(L&&L.d)||""}" max="${todayISO()}"></label>
+      <label class="cb"><input type="checkbox" data-adult="${t.id}" ${isAdult(r,t)?"checked":""}> Adults only</label>
+      ${t.every===1 && t.asNeeded?`<label>About how many times a week<input type="number" min="0" max="50" data-perweek="${t.id}" value="${perWeek(t)}"></label>`:""}
+      <label class="cb"><input type="checkbox" data-together="${t.id}" ${t.together?"checked":""}> Can be done together</label>
+      <button class="btn danger" data-del="${t.id}" type="button">Delete task</button>
+      <button class="linky" data-close type="button">Close</button>
+    </div>`;
+  }
+  return `<div class="task ${cls}">
+    <button class="check ${on?"on":""}" data-done="${t.id}" aria-pressed="${on}" ${canWrite?"":"disabled"} aria-label="${isNeed(t)||perDay(t)>1?"Log one more: ":on?"Undo: ":"Mark done: "}${esc(t.title)}">${CHECK}</button>
+    <div>${o.where?`<div class="where">${esc(r.name)}</div>`:""}
+      <button class="ttl" data-open="${t.id}" aria-expanded="${openEdit===t.id}">${esc(t.title)}</button>
+      ${t.tip && !o.noTip?`<div class="tip">${esc(t.tip)}</div>`:""}
+      <div class="meta">${o.noChip?"":(a?chip(member(a))+(ownerOf(t)?"<span>owns this</span>":""):(week && t.id in (week.assign||{}) || o.showGrab)?`<span>Up for grabs</span>`:"")}
+        ${t.every===1 && o.dots?dotsHTML(t):""}<span>${lastTxt}</span>${(t.every===1 && perDay(t)>1 && !t.asNeeded)?`<span>${taskStats(t.id).thisWeek} this week</span>`:""}${(t.every===1 && (perDay(t)>1 || t.asNeeded) && canWrite && dayKeys(t.id,todayISO()).length)?`<button class="linky undo1" data-undo1="${t.id}" type="button">Undo one</button>`:""}${hasHowto(t)?`<button class="linky howlink" data-howto="${t.id}" type="button">How to</button>`:""}<span>~${hrs(unitMin(r,t))}${t.every===1?(t.asNeeded?` each time, about ${perWeek(t)} a week`:perDay(t)>1?" each time":" a day"):""}</span>${withSel}</div>
+    </div>
+    <div class="stat"><b>${label}</b></div>
+    ${edit}
+  </div>`;
+}
+
+function taskStats(tid){
+  const byDay={}, byWho={};
+  const scan=obj=>Object.entries(obj||{}).forEach(([k,v])=>{
+    if(!v || typeof v!=="object" || !k.startsWith(tid+"~")) return;
+    const d=k.split("~")[1]; byDay[d]=(byDay[d]||0)+1; if(v.by) byWho[v.by]=(byWho[v.by]||0)+1;
+  });
+  Object.values(hist).forEach(scan); scan(wkdone);
+  const days=Object.keys(byDay).sort(), today=todayISO(), lastWk=shiftWeek(curWk,-1);
+  const sum=f=>days.filter(f).reduce((n,d)=>n+byDay[d],0);
+  const total=sum(()=>true), first=days[0]||null;
+  const span=first ? Math.round((parse(today)-parse(first))/86400000)+1 : 0;
+  return {byDay, byWho, total, first, span, avg: span?total/span:0,
+    thisWeek: sum(d=>d>=curWk), lastWeek: sum(d=>d>=lastWk && d<curWk)};
+}
+function historyHTML(t){
+  const st=taskStats(t.id);
+  if(!st.total) return `<div class="histbox"><strong>History</strong><div class="sub">Nothing logged yet. Each check-off is counted here.</div></div>`;
+  const today=todayISO(); let bars=""; let mx=1;
+  const d14=[]; for(let i=13;i>=0;i--){ const d=iso(addDays(today,-i)); d14.push(d); mx=Math.max(mx,st.byDay[d]||0); }
+  d14.forEach(d=>{ const c=st.byDay[d]||0; bars+=`<i class="${c?"":"z"} ${d===today?"t":""}" style="height:${c?Math.max(8,c/mx*100):4}%" title="${esc(fmt(d))}: ${c}"></i>`; });
+  const who=Object.entries(st.byWho).sort((a,b)=>b[1]-a[1]).map(([id,n])=>`${esc(mName(member(id)))} ${n}`).join(", ");
+  const avg=Math.round(st.avg*10)/10, goal=Math.max(1,Math.round(st.avg));
+  const suggest = t.every===1 && st.span>=7 && goal!==perDay(t) && canWrite
+    ? ` <button class="linky" data-setper="${t.id}" data-v="${goal}" type="button">Set the daily goal to ${goal}</button>` : "";
+  return `<div class="histbox"><strong>History</strong>
+    <div class="sub">${st.thisWeek} this week, ${st.lastWeek} last week. ${st.total} total since ${fmt(st.first)}, about ${avg} a day.${suggest}</div>
+    <div class="spark" aria-label="Last 14 days">${bars}</div>
+    <div class="sparkx"><span>${esc(fmt(d14[0]))}</span><span>Today</span></div>
+    ${who?`<div class="sub">By person: ${who}</div>`:""}</div>`;
+}
+function rankLine(mid){
+  const s=scores(wkdone); if(s.length<2) return "";
+  const i=s.findIndex(x=>x.m.id===mid); if(i<0) return "";
+  if(!s[i].pts) return "Not on the board yet this week.";
+  return i===0 ? `Leading the leaderboard with ${s[i].pts} pts.` : `#${i+1} on the leaderboard with ${s[i].pts} pts, ${s[0].pts-s[i].pts} behind ${esc(mName(s[0].m))}.`;
+}
+function viewMy(){
+  const me=member(meId);
+  if(!me) return `<p class="empty">Choose who you are to see your list.</p><button class="btn" data-switch type="button">Choose who I am</button>`;
+  if(!week) return `<p class="empty">Building this week's plan…</p>`;
+  const p=progress(me.id);
+  const mine=[], grabs=[], others={};
+  const A=effAssign();
+  Object.entries(A).forEach(([tid,a])=>{
+    const f=findTask(tid); if(!f) return;
+    if(a===me.id) mine.push(f);
+    else if(!a || !member(a)) grabs.push(f);
+    else (others[a]=others[a]||[]).push(f);
+  });
+  planItems().forEach(it=>{ if(!(it.t.id in A)) grabs.push({r:it.r,t:it.t}); });
+  const sortFn=(x,y)=>(doneThisWeek(x.t)-doneThisWeek(y.t)) || (status(x.t).n-status(y.t).n);
+  const daily=mine.filter(x=>x.t.every===1).sort(sortFn), weekly=mine.filter(x=>x.t.every!==1).sort(sortFn);
+  const pct=p.assigned?Math.min(100,Math.round(p.doneMin/p.assigned*100)):100;
+  let h=`<div class="roomHead"><div><h2>Your week</h2><div class="sub">Week of ${fmt(curWk)}</div></div>
+    ${canWrite?`<button class="linky" data-rebalance type="button" ${rebalancing?"disabled":""}>${rebalancing?"Rebalancing…":"Rebalance the week"}</button>`:""}</div>
+    <div class="progress"><div class="track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Your progress"><div class="fill" style="width:${pct}%"></div></div>
+    <div class="pmeta"><span>${hrs(p.doneMin)} of ${hrs(p.assigned)} done</span><span>${rankLine(me.id)}${p.credit>p.doneMin+0.5?` Plus ${hrs(p.credit-p.doneMin)} helping others.`:""}</span></div></div>`;
+  if(daily.length) h+=`<div class="group"><h3>Every day<small>check off today's</small></h3>${daily.map(x=>taskRow(x.r,x.t,{where:1,dots:1,noChip:1})).join("")}</div>`;
+  if(weekly.length) h+=`<div class="group"><h3>This week<small>${weekly.filter(x=>doneThisWeek(x.t)).length} of ${weekly.length} done</small></h3>${weekly.map(x=>taskRow(x.r,x.t,{where:1,noChip:1})).join("")}</div>`;
+  if(!mine.length) h+=`<p class="empty">Nothing assigned to you this week.</p>`;
+  const comes=allTasks().filter(x=>isNeed(x.t) && !ownerOf(x.t));
+  if(comes.length) h+=`<div class="group"><h3>As it comes up<small>anyone can log these</small></h3>${comes.map(x=>taskRow(x.r,x.t,{where:1,noChip:1})).join("")}</div>`;
+  const openGrabs=grabs.filter(x=>!doneThisWeek(x.t));
+  if(openGrabs.length) h+=`<div class="group"><h3>Up for grabs<small>${openGrabs.length}</small></h3>${openGrabs.sort(sortFn).map(x=>taskRow(x.r,x.t,{where:1,showGrab:1})).join("")}</div>`;
+  const helpList=Object.entries(others).map(([mid,list])=>[mid,list.filter(x=>!doneThisWeek(x.t)).sort(sortFn)]).filter(x=>x[1].length);
+  if(helpList.length) h+=`<details class="group"><summary>Help someone out<small>${helpList.reduce((n,x)=>n+x[1].length,0)} still open</small></summary>
+    ${helpList.map(([mid,list])=>`<div style="margin-top:14px">${chip(member(mid))}</div>${list.map(x=>taskRow(x.r,x.t,{where:1,noTip:1,noChip:1,dots:1})).join("")}`).join("")}</details>`;
+  return h;
+}
+
+function roomCounts(room){ let over=0,today=0; room.tasks.forEach(t=>{ if(doneThisWeek(t)&&t.every===1) return; const s=status(t); if(s.key==="overdue") over++; else if(s.key==="today") today++; }); return {over,today}; }
+function cellHTML(room){
+  const c=roomCounts(room);
+  const pill=c.over?`<span class="pill over">${c.over} overdue</span>`:c.today?`<span class="pill due">${c.today} due</span>`:`<span class="pill clear">All caught up</span>`;
+  return `<button class="cell ${room.id===selRoom?"sel":""}" data-room="${room.id}"><span class="cname">${esc(room.name)}</span>${pill}</button>`;
+}
+function viewRooms(){
+  const by=f=>cfg.rooms.filter(r=>r.floor===f);
+  const floorHTML=(f,label,cls)=>{ const rs=by(f); return `<div class="floor ${cls||""}"><div class="flabel">${label}</div><div class="cells">${rs.length?rs.map(cellHTML).join(""):`<div class="cell" style="color:var(--muted);font-size:.85rem">No rooms</div>`}</div></div>`; };
+  let h=`<div class="houseWrap"><div class="house"><div class="roof"><div class="chimney"></div></div>${floorHTML("upper","Upstairs")}${floorHTML("main","Main floor")}<div class="ground"></div>${floorHTML("basement","Basement","below")}</div>
+    <div class="yard">${by("other").map(cellHTML).join("")}</div></div>`;
+  const room=findRoom(selRoom);
+  if(!room) return h+`<p class="empty">Select a room.</p>`;
+  const floorName=(FLOORS.find(f=>f[0]===room.floor)||[,""])[1];
+  h+=`<div class="roomHead" id="roomPanel"><div><h2>${esc(room.name)}</h2><div class="sub">${floorName}${room.count>1?`, covers ${room.count} rooms`:""}, ${room.tasks.length} tasks</div></div>
+    <button class="linky" data-roomsettings type="button" aria-expanded="${showRoomSettings}">${showRoomSettings?"Close room settings":"Room settings"}</button></div>`;
+  if(showRoomSettings) h+=`<div class="drawer">
+      <label>Room name<input type="text" id="rName" value="${esc(room.name)}"></label>
+      <label>Floor<select id="rFloor">${FLOORS.map(([k,l])=>`<option value="${k}" ${k===room.floor?"selected":""}>${l}</option>`).join("")}</select></label>
+      <label>How many rooms it covers<input type="number" id="rCount" min="1" max="20" value="${room.count||1}"></label>
+      <button class="btn danger" id="rDelete" type="button">Delete room</button></div>`;
+  const needTs=room.tasks.filter(isNeed);
+  if(needTs.length) h+=`<div class="group"><h3>As it comes up<small>tap each time you do one</small></h3>${needTs.map(t=>taskRow(room,t,{dots:1})).join("")}</div>`;
+  FREQS.forEach(([f,l])=>{ const ts=room.tasks.filter(t=>t.every===f && !isNeed(t)); if(ts.length) h+=`<div class="group"><h3>${l}<small>${ts.length}</small></h3>${ts.map(t=>taskRow(room,t,{dots:1})).join("")}</div>`; });
+  h+=`<div class="addTask"><h3>Add a task to ${esc(room.name)}</h3><div class="row">
+    <label style="flex:1 1 220px">Task<input type="text" id="newTitle" placeholder="e.g. Clean the grout"></label>
+    <label>How often<select id="newFreq">${freqOptions(null,30)}</select></label>
+    <label>Minutes<input type="number" id="newMin" min="1" value="15"></label>
+    <button class="btn" id="addTaskBtn" type="button" ${canWrite?"":"disabled"}>Add task</button></div></div>`;
+  return h;
+}
+
+function leaderboardHTML(){
+  const s=scores(wkdone);
+  if(!s.length) return "";
+  const past=[1,2,3].map(i=>shiftWeek(curWk,-i)).filter(w=>hist[w]).map(w=>({w,c:champ(hist[w])}));
+  const wins={}; past.forEach(x=>{ if(x.c) wins[x.c.m.id]=(wins[x.c.m.id]||0)+1; });
+  const top=Math.max(1,s[0].pts);
+  const medal=["🥇","🥈","🥉"];
+  const lastWk=past.find(x=>x.w===shiftWeek(curWk,-1));
+  return `<section><h3>This week's leaderboard</h3>
+    <p>Points are minutes of work done, adjusted for each person's share, so a half-share kid earns double points per minute. Resets every Monday.</p>
+    ${lastWk && lastWk.c?`<p class="champ">👑 Last week's champion: <strong>${esc(mName(lastWk.c.m))}</strong> with ${lastWk.c.pts} pts</p>`:""}
+    <ol class="lb">${s.map((x,i)=>{
+      const tied=i>0 && x.pts===s[i-1].pts;
+      const rank=tied? "" : (x.pts? (medal[i]||`#${i+1}`) : "");
+      const p=progress(x.m.id);
+      return `<li class="${i===0&&x.pts?"lead":""}"><span class="rk">${rank}</span>
+        <div><div class="lbname">${chip(x.m)}${wins[x.m.id]?`<span class="wins" title="Weekly wins in the last 3 weeks">${"👑".repeat(wins[x.m.id])}</span>`:""}</div>
+          <div class="fbar" style="--c:${mColor(x.m)}"><span style="width:${x.pts/top*100}%"></span></div>
+          <div class="fnote">${hrs(x.min)} of work, ${p.nd} of ${p.n} of their tasks done</div></div>
+        <span class="pts">${x.pts}<small>pts</small></span></li>`;
+    }).join("")}</ol>
+    ${past.length?`<p class="sub" style="margin-top:12px">Past champions: ${past.map(x=>`week of ${fmt(x.w)}, ${x.c?esc(mName(x.c.m)):"tie"}`).join("; ")}</p>`:""}
+  </section>`;
+}
+function viewFamily(){
+  const ms=members();
+  const named=ms.filter(m=>m.name);
+  const totalShare=named.reduce((s,m)=>s+(m.share==null?1:m.share),0)||1;
+  const credits=creditsIn(wkdone);
+  const totalCredit=Object.values(credits).reduce((a,b)=>a+b,0);
+  let planned=0; if(week) Object.entries(effAssign()).forEach(([tid])=>{ const f=findTask(tid); if(f) planned+=taskLoad(f.r,f.t); });
+  let h=`<div class="hh">`+leaderboardHTML()+`<section><h3>This week's split</h3>
+    <p>Bars show each person's share of the work actually done this week. The line marks their fair share. Time counts for whoever did the task, assigned or not.</p>
+    <div class="fair">${named.map(m=>{
+      const target=(m.share==null?1:m.share)/totalShare*100;
+      const got=totalCredit?credits[m.id]/totalCredit*100||0:0;
+      const p=progress(m.id);
+      return `<div class="frow"><span>${chip(m)}</span><div class="fbar" style="--c:${mColor(m)}"><span style="width:${got}%"></span><em style="left:calc(${target}% - 1px)"></em></div>
+        <span class="fnote">${hrs(credits[m.id]||0)} done (${Math.round(got)}%), fair share ${Math.round(target)}%. ${p.nd} of ${p.n} assigned tasks done.</span></div>`;
+    }).join("") || `<p class="empty">Add the people in your house below.</p>`}</div>
+    <p style="margin-top:14px">About ${hrs(planned)} of work planned this week. ${canWrite?`<button class="linky" data-rebalance type="button" ${rebalancing?"disabled":""}>${rebalancing?"Rebalancing…":"Rebalance"}</button> reassigns everything not yet done.`:""}</p></section>`;
+  h+=`<section><h3>People</h3><p>Share sets how much of the work each person gets. Turn off "Adult tasks" for kids so they never get things like the water heater or gutters.</p><div class="people">
+    ${ms.map(m=>`<div class="person"><span class="av lg" style="--c:${mColor(m)}">${esc(mName(m).charAt(0).toUpperCase())}</span><div>
+      <strong>${esc(m.name||"(no name yet)")}</strong>${m.id===meId?` <span class="sub">(you)</span>`:""}
+      <div class="sub">${m.uid?"Signed in":"Hasn't signed in yet. They'll tap their name after entering the invite code."}</div>
+      <div class="ctl">
+        <label>Name<input type="text" data-mname="${m.id}" value="${esc(m.name)}" ${canWrite?"":"disabled"}></label>
+        <label>Share<select data-mshare="${m.id}" ${canWrite?"":"disabled"}>${[[1,"Full share"],[0.75,"Three quarters"],[0.5,"Half"],[0.25,"Quarter"],[0,"Sitting out"]].map(([v,l])=>`<option value="${v}" ${(m.share==null?1:m.share)===v?"selected":""}>${l}</option>`).join("")}</select></label>
+        <label class="cb"><input type="checkbox" data-madult="${m.id}" ${m.adult!==false?"checked":""} ${canWrite?"":"disabled"}> Adult tasks</label>
+        ${canWrite && m.id!==meId?`<button class="linky" data-mremove="${m.id}" type="button">Remove</button>`:""}
+      </div></div></div>`).join("")}</div>
+    ${canWrite?`<div class="row" style="margin-top:16px"><label>Add someone<input type="text" id="newMember" placeholder="Name"></label><button class="btn" id="addMember" type="button">Add person</button></div>`:""}
+  </section>
+  <section><h3>Invite someone</h3>
+    <p>Send them the app link and your invite code <strong class="code">${esc((HHINFO&&HHINFO.invite_code)||"")}</strong>. They create an account, enter the code, and tap their name. On iPhone, open the link in Safari, then Share, then Add to Home Screen.</p>
+    <button class="btn soft" id="copyInvite" type="button">Copy invite message</button>
+  </section></div>`;
+  return h;
+}
+
+const openMRooms=new Set(); let mQuery="";
+function managerHTML(){
+  const dis=canWrite?"":"disabled";
+  const ownerOpts=t=>`<option value="">Rotates</option>`+members().filter(m=>m.name).map(m=>`<option value="${m.id}" ${t.owner===m.id?"selected":""}>${esc(m.name)}</option>`).join("");
+  const roomOpts=cur=>cfg.rooms.map(r=>`<option value="${r.id}" ${r.id===cur?"selected":""}>${esc(r.name)}</option>`).join("");
+  const row=(r,t)=>{
+    const daily=t.every===1;
+    return `<div class="mrow" data-q="${esc((t.title+" "+r.name).toLowerCase())}">
+      <input type="text" class="mtitle" data-ttitle="${t.id}" value="${esc(t.title)}" aria-label="Task name" ${dis}>
+      <div class="mctl">
+        <label>How often<select data-freq="${t.id}" ${dis}>${freqOptions(t)}</select></label>
+        <label>Minutes${taskCount(r,t)>1?` <span class="hint">per room</span>`:""}<input type="number" min="1" max="600" data-min="${t.id}" value="${taskMin(t)}" ${dis}></label>
+        ${r.count>1?`<label>How many rooms <span class="hint">of ${r.count}</span><input type="number" min="1" max="20" data-tcount="${t.id}" value="${taskCount(r,t)}" ${dis}></label>`:""}
+        ${taskCount(r,t)>1?`<span class="hint mtotal">= ${hrs(unitMin(r,t))} each time</span>`:""}
+        ${daily && !t.asNeeded?`<label>Times a day<input type="number" min="1" max="10" data-per="${t.id}" value="${perDay(t)}" ${dis}></label>`:""}
+        ${daily && t.asNeeded?`<label>About how many a week<input type="number" min="0" max="50" data-perweek="${t.id}" value="${perWeek(t)}" ${dis}></label>`:""}
+        <label class="cb"><input type="checkbox" data-together="${t.id}" ${t.together?"checked":""} ${dis}> Can be done together</label>
+        <label class="cb"><input type="checkbox" data-adult="${t.id}" ${isAdult(r,t)?"checked":""} ${dis}> Adults only</label>
+        <label>Owner<select data-owner="${t.id}" ${dis}>${ownerOpts(t)}</select></label>
+        <label>Room<select data-troom="${t.id}" ${dis}>${roomOpts(r.id)}</select></label>
+        ${canWrite?`<button class="linky del" data-del="${t.id}" type="button">Delete</button>`:""}
+      </div></div>`;
+  };
+  const total=allTasks().length;
+  return `<section class="mgr"><h3>All tasks</h3>
+    <p>Every task in the house, grouped by room. Changes save as you make them and apply to everyone. Tap Rebalance on My week afterward to update this week's split.</p>
+    <div class="row" style="margin-bottom:14px"><label style="flex:1 1 260px">Search ${total} tasks<input type="text" id="mSearch" value="${esc(mQuery)}" placeholder="e.g. toilet, Oppie, vacuum" autocomplete="off"></label></div>
+    ${cfg.rooms.map(r=>`<details class="mroom" data-mroom="${r.id}" ${openMRooms.has(r.id)?"open":""}><summary>${esc(r.name)}<small>${r.tasks.length} task${r.tasks.length===1?"":"s"}</small></summary>
+      ${r.tasks.map(t=>row(r,t)).join("") || `<p class="empty">No tasks yet.</p>`}</details>`).join("")}
+    <p class="empty" id="mNone" hidden>No tasks match.</p>
+    ${canWrite?`<div class="drawer" style="margin-top:18px"><strong style="flex-basis:100%">Add a task</strong>
+      <label style="flex:1 1 220px">Task<input type="text" id="mNewTitle" placeholder="e.g. Water the plants"></label>
+      <label>Room<select id="mNewRoom">${roomOpts(selRoom)}</select></label>
+      <label>How often<select id="mNewFreq">${freqOptions(null,7)}</select></label>
+      <label>Minutes<input type="number" id="mNewMin" min="1" value="15"></label>
+      <button class="btn" id="mAdd" type="button">Add task</button></div>`:""}
+  </section>`;
+}
+function applySearch(){
+  const q=mQuery.trim().toLowerCase(); let any=false;
+  document.querySelectorAll(".mroom").forEach(dt=>{
+    let vis=0;
+    dt.querySelectorAll(".mrow").forEach(r=>{ const show=!q || r.dataset.q.includes(q); r.hidden=!show; if(show) vis++; });
+    if(q){ dt.hidden=!vis; if(vis) dt.open=true; } else { dt.hidden=false; dt.open=openMRooms.has(dt.dataset.mroom); }
+    if(vis) any=true;
+  });
+  const none=document.getElementById("mNone"); if(none) none.hidden=any || !q;
+}
+function viewSettings(){
+  return `<div class="settings">`+managerHTML()+`
+    <section><h3>Your account</h3><p>Signed in as ${esc(USER_EMAIL)}.</p><button class="btn soft" id="appSignOut" type="button">Sign out</button></section>
+    <section><h3>Add a room</h3><p>Pick a type to start with a ready-made task list.</p>
+      <div class="row">
+        <label>Type<select id="aType">${Object.entries(TYPE_NAMES).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></label>
+        <label>Name<input type="text" id="aName" placeholder="e.g. Office"></label>
+        <label>Floor<select id="aFloor">${FLOORS.map(([k,l])=>`<option value="${k}" ${k==="main"?"selected":""}>${l}</option>`).join("")}</select></label>
+        <button class="btn" id="aAdd" type="button" ${canWrite?"":"disabled"}>Add room</button>
+      </div></section>
+    <section><h3>Schedule start date</h3><p>Tasks nobody has logged yet count from this date. Safety checks like smoke alarms and the furnace filter are due right away.</p>
+      <div class="row"><label>Start date<input type="date" id="startDate" value="${cfg.start}" max="${todayISO()}" ${canWrite?"":"disabled"}></label></div></section>
+    <section><h3>How the split works</h3><p>Each Monday, every task due that week gets an estimated time (minutes per room, times the number of rooms it covers; daily tasks count all seven days). Tasks are handed out biggest first, each to whoever has the least work relative to their share. Anyone who had a task last week is less likely to get it again, so the chores rotate. Kids with "Adult tasks" off only get kid-safe tasks. Edit any task's minutes to tune the balance.</p></section>
+    ${(isOwner && canWrite)?`<section><h3>Start over</h3><p>Resets rooms, tasks and history for everyone. People stay.</p><button class="btn danger" id="resetAll" type="button">Reset the house</button></section>`:""}
+  </div>`;
+}
+
+function renderOverlay(){
+  const o=document.getElementById("overlay");
+  if(phase==="ready" && howtoOpen){ const old=o.querySelector(".sheet.howto"); const y=old?old.scrollTop:0; o.innerHTML=howtoSheet(); const nw=o.querySelector(".sheet.howto"); if(nw) nw.scrollTop=y; if(howtoOpen) return; }
+  if(phase!=="ready" || !canWrite){ o.innerHTML=""; return; }
+  const me=member(meId);
+  if(me && !me.name){
+    o.innerHTML=`<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="ovT"><div class="sheet"><h2 id="ovT">Welcome home.</h2>
+      <p>You're setting up the house for your family. What should everyone call you?</p>
+      <div class="row"><label style="flex:1">Your name<input type="text" id="ovName" autocomplete="given-name"></label><button class="btn" id="ovSaveName" type="button">Continue</button></div></div></div>`;
+    return;
+  }
+  if(!me && (showPicker || (!pickerSkipped && view==="my"))){
+    const avail=members().filter(m=>m.name && (!m.uid || m.uid===myUid));
+    o.innerHTML=`<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="ovT"><div class="sheet"><h2 id="ovT">Who's using this?</h2>
+      <p>Tap your name so what you check off is credited to you.</p>
+      <div class="pick">${avail.map(m=>`<button data-pick="${m.id}" type="button"><span class="av lg" style="--c:${mColor(m)}">${esc(m.name.charAt(0).toUpperCase())}</span>${esc(m.name)}</button>`).join("")}</div>
+      <div class="row"><label style="flex:1">${avail.length?"Not listed? Your name":"Your name"}<input type="text" id="ovNew"></label><button class="btn" id="ovAdd" type="button">Add me</button></div>
+      <p style="margin:14px 0 0"><button class="linky" id="ovSkip" type="button">Just looking</button></p></div></div>`;
+    return;
+  }
+  o.innerHTML="";
+}
+
+// ---------------- Actions ----------------
+let undoFn=null, toastTimer=null;
+function toast(msg,undo){
+  undoFn=undo||null;
+  document.getElementById("toastMsg").textContent=msg;
+  document.getElementById("toastUndo").style.display=undo?"":"none";
+  const el=document.getElementById("toast"); el.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),4500);
+}
+document.getElementById("toastUndo").addEventListener("click",()=>{ if(undoFn){ undoFn(); undoFn=null; } document.getElementById("toast").classList.remove("show"); });
+
+function ask(msg, okLabel, danger){
+  return new Promise(res=>{
+    const host=document.createElement("div");
+    host.innerHTML=`<div class="overlay" role="alertdialog" aria-modal="true" aria-label="Confirm"><div class="sheet">
+      <p style="color:var(--ink);font-size:1.02rem">${esc(msg)}</p>
+      <div class="row" style="justify-content:flex-end"><button class="btn soft" data-a="0" type="button">Cancel</button>
+      <button class="btn${danger?" dangerfill":""}" data-a="1" type="button">${esc(okLabel||"OK")}</button></div></div></div>`;
+    document.body.appendChild(host);
+    const kd=e=>{ if(e.key==="Escape") done(false); };
+    function done(v){ host.remove(); document.removeEventListener("keydown",kd); res(v); }
+    document.addEventListener("keydown",kd);
+    host.addEventListener("click",e=>{ e.stopPropagation(); const b=e.target.closest("[data-a]"); if(b) done(b.dataset.a==="1"); else if(e.target.classList.contains("overlay")) done(false); });
+    host.querySelector('[data-a="1"]').focus();
+  });
+}
+function removeLatestToday(tid){
+  const f=findTask(tid); if(!f || !canWrite) return;
+  const today=todayISO(), keys=dayKeys(tid,today); if(!keys.length) return;
+  const key=keys[keys.length-1], e=wkdone[key];
+  write(PD(),"update",{[key]:null});
+  write(P.last,"update",{[tid]: keys.length>1 ? {d:today,by:wkdone[keys[keys.length-2]].by} : (e.prev||null)});
+  const per=perDay(f.t);
+  toast(per>1 ? `${f.t.title}: ${keys.length-1} of ${per} today` : "Unchecked: "+f.t.title);
+}
+function toggle(tid){
+  if(!canWrite) return;
+  if(!meId){ showPicker=true; render(); return; }
+  const f=findTask(tid); if(!f) return;
+  const {r,t}=f, today=todayISO();
+  if(t.every===1){
+    const per=perDay(t), keys=dayKeys(tid,today);
+    if(per===1 && !t.asNeeded && keys.length>=per){ removeLatestToday(tid); return; }
+    const base=doneKey(tid,today); let key=base, n=1; while(wkdone[key] && typeof wkdone[key]==="object"){ n++; key=base+"~"+n; }
+    const prev=last[tid]||null;
+    const ready = wkdone.created ? Promise.resolve() : ensureDoneDoc();
+    ready.then(()=>write(PD(),"update",{[key]:{by:meId,min:unitMin(r,t),prev,at:Date.now()}}));
+    write(P.last,"update",{[tid]:{d:today,by:meId}});
+    const a=validAsg(tid);
+    const msg = t.asNeeded ? `${t.title}: ${taskStats(tid).thisWeek+1} this week` : per>1 ? `${t.title}: ${keys.length+1}${keys.length+1>per?` today (goal ${per})`:` of ${per} today`}` : (a && a!==meId ? `Thanks for covering for ${mName(member(a))}!` : `Done: ${t.title}`);
+    toast(msg, ()=>{ write(PD(),"update",{[key]:null}); write(P.last,"update",{[tid]:prev}); });
+    return;
+  }
+  if(doneThisWeek(t)){
+    let key = t.every===1 ? doneKey(tid,today) : null;
+    if(!key){ const es=entriesFor(tid).sort((a,b)=>a[0]<b[0]?1:-1); key=es[0]?es[0][0]:null; }
+    const e = key ? wkdone[key] : null;
+    if(e){ write(PD(),"update",{[key]:null}); write(P.last,"update",{[tid]:e.prev||null}); }
+    else write(P.last,"update",{[tid]:null});
+    toast("Unchecked: "+t.title);
+  } else {
+    const key=doneKey(tid,today);
+    const ready = wkdone.created ? Promise.resolve() : ensureDoneDoc();
+    ready.then(()=>write(PD(),"update",{[key]:{by:meId,min:unitMin(r,t),prev:last[tid]||null,at:Date.now()}}));
+    write(P.last,"update",{[tid]:{d:today,by:meId}});
+    const a=validAsg(tid);
+    toast(a && a!==meId ? `Thanks for covering for ${mName(member(a))}!` : `Done: ${t.title}`, ()=>toggle(tid));
+  }
+}
+
+document.addEventListener("click",e=>{
+  const t=e.target;
+  const tab=t.closest("nav.tabs [data-view]"); if(tab){ view=tab.dataset.view; openEdit=null; render(); return; }
+  if(t.closest("[data-switch]")){ lsSet("home-base-me",null); meId=null; switching=true; showPicker=true; pickerSkipped=false; render(); return; }
+  const d=t.closest("[data-done]"); if(d){ toggle(d.dataset.done); return; }
+  const hw=t.closest("[data-howto]"); if(hw){ howtoOpen=hw.dataset.howto; renderOverlay(); const i=document.querySelector(".sheet.howto"); if(i) i.scrollTop=0; return; }
+  if(t.closest("[data-howclose]") || (t.matches && t.matches("[data-howbg]"))){ howtoOpen=null; renderOverlay(); return; }
+  if(t.id==="hvSave"){ const u=safeUrl(document.getElementById("hvUrl").value); if(!u){ toast("That doesn't look like a web link. It should start with https://"); return; }
+    const tid=t.dataset.tid; document.activeElement.blur(); patchTask(tid,{video:{url:u,by:meId||null,at:Date.now()}}).then(()=>{ toast("Video saved for everyone"); renderOverlay(); }); return; }
+  if(t.id==="hvRemove"){ const tid=t.dataset.tid; patchTask(tid,{video:null}).then(()=>{ toast("Video removed"); renderOverlay(); }); return; }
+  const sp=t.closest("[data-setper]"); if(sp){ patchTask(sp.dataset.setper,{perDay:Number(sp.dataset.v)}).then(()=>toast(`Daily goal set to ${sp.dataset.v}. Rebalance to update this week's split.`)); return; }
+  const u1=t.closest("[data-undo1]"); if(u1){ removeLatestToday(u1.dataset.undo1); return; }
+  const o=t.closest("[data-open]"); if(o){ openEdit=openEdit===o.dataset.open?null:o.dataset.open; render(); return; }
+  if(t.closest("[data-close]")){ openEdit=null; render(); return; }
+  const rm=t.closest("[data-room]");
+  if(rm){ selRoom=rm.dataset.room; openEdit=null; showRoomSettings=false; render(); const p=document.getElementById("roomPanel"); if(p) p.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"}); return; }
+  if(t.closest("[data-roomsettings]")){ showRoomSettings=!showRoomSettings; render(); return; }
+  if(t.closest("[data-rebalance]")){ if(rebalancing) return; ask("Reassign everything that isn't done yet this week? Finished tasks keep their credit.","Rebalance").then(ok=>{ if(ok) rebalance(); }); return; }
+  const del=t.closest("[data-del]");
+  if(del){
+    const f=findTask(del.dataset.del); if(!f) return;
+    const rId=f.r.id, task=clone(f.t), idx=f.r.tasks.indexOf(f.t);
+    openEdit=null;
+    updateRooms(rs=>{ const r=rs.find(x=>x.id===rId); if(r) r.tasks=r.tasks.filter(x=>x.id!==task.id); });
+    toast(`Deleted: ${task.title}`,()=>updateRooms(rs=>{ const r=rs.find(x=>x.id===rId); if(r) r.tasks.splice(idx,0,task); }));
+    return;
+  }
+  if(t.id==="rDelete"){
+    const room=findRoom(selRoom); if(!room) return;
+    ask(`Delete ${room.name} and all its tasks?`,"Delete room",true).then(ok=>{ if(!ok) return;
+      const id=room.id; showRoomSettings=false; selRoom=null;
+      updateRooms(rs=>{ const i=rs.findIndex(x=>x.id===id); if(i>=0) rs.splice(i,1); }).then(()=>toast(`Deleted ${room.name}`)); });
+    return;
+  }
+  if(t.id==="addTaskBtn"){ addTask(); return; }
+  if(t.id==="mAdd"){
+    const inp=document.getElementById("mNewTitle"); const title=inp.value.trim(); if(!title){ inp.focus(); return; }
+    const rId=document.getElementById("mNewRoom").value, fp=freqPatch(document.getElementById("mNewFreq").value), min=Number(document.getElementById("mNewMin").value)||15;
+    openMRooms.add(rId); inp.value=""; inp.blur();
+    updateRooms(rs=>{ const r=rs.find(x=>x.id===rId); if(r) r.tasks.push(Object.assign({id:rId+"c"+rid(),title,tip:"",m:0,min},fp)); }).then(()=>toast(`Added: ${title}`));
+    return;
+  }
+  if(t.id==="aAdd"){
+    const type=document.getElementById("aType").value, floor=document.getElementById("aFloor").value;
+    const name=document.getElementById("aName").value.trim()||TYPE_NAMES[type];
+    const room=makeRoom(name,type,floor,1); selRoom=room.id; view="rooms";
+    updateRooms(rs=>rs.push(room)).then(()=>toast(`Added ${name}`)); return;
+  }
+  if(t.id==="resetAll"){
+    ask("Reset rooms, tasks and history for everyone? This can't be undone.","Reset everything",true).then(ok=>{ if(!ok) return;
+      const fresh=seedConfig(); fresh.members=clone(cfg.members); fresh.start=todayISO();
+      write(P.last,"set",{_init:1}); write(P.config,"set",fresh); write(PD(),"set",{created:Date.now()}); write(PW(),"set",{wk:curWk,assign:{},created:0}).then(()=>rebalance());
+      selRoom=null; view="my"; render(); });
+    return;
+  }
+  if(t.id==="addMember"){
+    const inp=document.getElementById("newMember"); const name=inp.value.trim(); if(!name){ inp.focus(); return; }
+    updateMembers(ms=>ms.push({id:"m"+rid(),name,uid:null,share:1,adult:true})).then(()=>toast(`Added ${name}. Rebalance to give them tasks this week.`)); return;
+  }
+  const mr=t.closest("[data-mremove]");
+  if(mr){ const m=member(mr.dataset.mremove); if(!m) return; ask(`Remove ${mName(m)}? Their tasks this week become up for grabs.`,"Remove",true).then(ok=>{ if(!ok) return; const id=m.id; updateMembers(ms=>{ const i=ms.findIndex(x=>x.id===id); if(i>=0) ms.splice(i,1); }).then(()=>toast(`Removed ${mName(m)}`)); }); return; }
+  if(t.id==="ovSaveName"){ const v=document.getElementById("ovName").value.trim(); if(!v) return; const id=meId; document.activeElement.blur(); updateMembers(ms=>{ const m=ms.find(x=>x.id===id); if(m) m.name=v; }); return; }
+  const pk=t.closest("[data-pick]");
+  if(pk){ switching=false; const id=pk.dataset.pick; lsSet("home-base-me",id); showPicker=false; meId=id; if(myUid && !members().some(x=>x.uid===myUid)) updateMembers(ms=>{ const m=ms.find(x=>x.id===id); if(m && !m.uid) m.uid=myUid; }); render(); return; }
+  if(t.id==="ovAdd"){ const v=document.getElementById("ovNew").value.trim(); if(!v) return; switching=false; const id="m"+rid(); lsSet("home-base-me",id); showPicker=false; meId=id; document.activeElement.blur();
+    updateMembers(ms=>ms.push({id,name:v,uid:(myUid && !ms.some(x=>x.uid===myUid))?myUid:null,share:1,adult:true})).then(()=>toast(`Welcome, ${v}! Ask someone to rebalance the week to get your tasks.`)); return; }
+  if(t.id==="ovSkip"){ switching=false; resolveMe(); pickerSkipped=true; showPicker=false; render(); return; }
+});
+function addTask(){
+  const room=findRoom(selRoom); const inp=document.getElementById("newTitle"); const title=inp.value.trim(); if(!title){ inp.focus(); return; }
+  const fp=freqPatch(document.getElementById("newFreq").value), every=fp.every, min=Number(document.getElementById("newMin").value)||15;
+  const rId=room.id; inp.value=""; inp.blur();
+  updateRooms(rs=>{ const r=rs.find(x=>x.id===rId); if(r) r.tasks.push(Object.assign({id:rId+"c"+rid(),title,tip:"",m:0,min},fp)); }).then(()=>toast(`Added: ${title}`));
+}
+document.addEventListener("input",e=>{ if(e.target.id==="mSearch"){ mQuery=e.target.value; applySearch(); } });
+document.addEventListener("toggle",e=>{ const dt=e.target; if(dt.classList && dt.classList.contains("mroom") && !mQuery){ dt.open?openMRooms.add(dt.dataset.mroom):openMRooms.delete(dt.dataset.mroom); } },true);
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape" && howtoOpen){ howtoOpen=null; renderOverlay(); return; }
+  if(e.key==="Enter" && e.target.id==="hvUrl"){ e.preventDefault(); document.getElementById("hvSave").click(); return; }
+  if(e.key==="Enter" && e.target.id==="mNewTitle"){ e.preventDefault(); document.getElementById("mAdd").click(); return; }
+  if(e.key==="Enter" && e.target.dataset && e.target.dataset.ttitle){ e.preventDefault(); e.target.blur(); return; }
+  if(e.key!=="Enter") return;
+  const id=e.target.id;
+  if(id==="newTitle"){ e.preventDefault(); addTask(); }
+  if(id==="ovName"){ e.preventDefault(); document.getElementById("ovSaveName").click(); }
+  if(id==="ovNew"){ e.preventDefault(); document.getElementById("ovAdd").click(); }
+  if(id==="newMember"){ e.preventDefault(); document.getElementById("addMember").click(); }
+});
+document.addEventListener("change",e=>{
+  const t=e.target, ds=t.dataset;
+  if(ds.freq){ patchTask(ds.freq,freqPatch(t.value)); return; }
+  if(ds.min){ const v=Number(t.value); if(v>0) patchTask(ds.min,{min:v}); return; }
+  if(ds.adult){ patchTask(ds.adult,{adult:t.checked}); return; }
+  if(ds.tcount){ const v=Math.max(1,Math.min(20,Number(t.value)||1)); patchTask(ds.tcount,{count:v}); return; }
+  if(ds.ttitle){ const v=t.value.trim(); if(v) patchTask(ds.ttitle,{title:v}); else render(); return; }
+  if(ds.troom){ const tid=ds.troom, to=t.value; const tr=findRoom(to); openMRooms.add(to);
+    updateRooms(rs=>{ let task=null; rs.forEach(r=>{ const i=r.tasks.findIndex(x=>x.id===tid); if(i>=0) task=r.tasks.splice(i,1)[0]; }); const r=rs.find(x=>x.id===to); if(task && r) r.tasks.push(task); })
+      .then(()=>toast(`Moved to ${tr?tr.name:"room"}`)); return; }
+  if(ds.needed){ patchTask(ds.needed,{asNeeded:t.checked}); return; }
+  if(ds.together){ patchTask(ds.together,{together:t.checked}); return; }
+  if(ds.perweek){ const v=Math.max(0,Math.min(50,Number(t.value)||0)); patchTask(ds.perweek,{perWeek:v}); toast("Saved. Rebalance to update this week's split."); return; }
+  if(ds.per){ const v=Math.max(1,Math.min(10,Number(t.value)||1)); patchTask(ds.per,{perDay:v}); return; }
+  if(ds.owner){ patchTask(ds.owner,{owner:t.value||null}); toast(t.value?"Owner set. They'll always get this task.":"This task will rotate again."); return; }
+  if(ds.with){ write(PD(),"update",{[ds.with]:{with: t.value?[t.value]:[]}}); return; }
+  if(ds.asg){ write(PW(),"update",{assign:{[ds.asg]:t.value||null}}); return; }
+  if(ds.last){ write(P.last,"update",{[ds.last]: t.value && t.value<=todayISO() ? {d:t.value,by:null} : null}); return; }
+  if(ds.mname){ const v=t.value.trim(); if(v) updateMembers(ms=>{ const m=ms.find(x=>x.id===ds.mname); if(m) m.name=v; }); return; }
+  if(ds.mshare){ updateMembers(ms=>{ const m=ms.find(x=>x.id===ds.mshare); if(m) m.share=Number(t.value); }); return; }
+  if(ds.madult){ updateMembers(ms=>{ const m=ms.find(x=>x.id===ds.madult); if(m) m.adult=t.checked; }); return; }
+  if(t.id==="rName"){ const v=t.value.trim(); if(v) updateRooms(rs=>{ const r=rs.find(x=>x.id===selRoom); if(r) r.name=v; }); return; }
+  if(t.id==="rFloor"){ updateRooms(rs=>{ const r=rs.find(x=>x.id===selRoom); if(r) r.floor=t.value; }); return; }
+  if(t.id==="rCount"){ const v=Math.max(1,Number(t.value)||1); updateRooms(rs=>{ const r=rs.find(x=>x.id===selRoom); if(r) r.count=v; }); return; }
+  if(t.id==="startDate" && t.value && t.value<=todayISO()){ write(P.config,"update",{start:t.value}); return; }
+});
+
+// Day and week rollover while the page stays open
+let lastDay=todayISO();
+setInterval(()=>{ const d=todayISO(); if(d!==lastDay){ lastDay=d; if(weekStart(d)!==curWk) subscribeWeek(); render(); } },60000);
+
+render();
+authFlow().catch(e=>{ console.error(e); showAuth("error","Couldn't load. Check your connection and reload."); });
+})();
+</script>
+</body>
+</html>
