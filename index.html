@@ -182,6 +182,12 @@ label.cb{display:flex!important;align-items:center;gap:8px;font-weight:500!impor
 .authform input{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:11px 12px;font-size:1rem}
 .authform .btn{padding:12px}
 .authmsg{margin-top:14px;background:var(--soon-soft);color:var(--ink)!important;border-radius:8px;padding:10px 12px;font-size:.92rem}
+.cprow{display:grid;grid-template-columns:1fr auto auto;gap:6px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.cplabel{grid-column:1 / -1;font-size:.8rem;font-weight:600;color:var(--muted)}
+.cpval{font-family:ui-monospace,Menlo,monospace;font-size:.78rem;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;overflow-x:auto;white-space:nowrap;min-width:0}
+.btn.sm{padding:6px 12px;font-size:.85rem}
+.mctl .phr{flex:1 1 100%}
+.mctl .phr input{width:100%}
 .code{font-family:ui-monospace,Menlo,monospace;letter-spacing:.12em;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 8px;color:var(--ink)}
 .histbox{flex-basis:100%;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:2px}
 .histbox .sub{margin-top:4px}
@@ -915,6 +921,23 @@ function startApp(){
   DB=makeSupaDB(); remote=true; canWrite=true; isOwner=true;
   document.getElementById("sync").textContent="Synced live across everyone's phones.";
   subscribeAll(); DB.startRealtime();
+  loadSiriKey();
+}
+let SIRI_KEY=null, showKey=false;
+async function loadSiriKey(){ const r=await sb.from("member_keys").select("key").limit(1).maybeSingle(); if(!r.error && r.data){ SIRI_KEY=r.data.key; if(view==="settings") render(); } }
+function siriHTML(){
+  const rpc=n=>`${SB_URL}/rest/v1/rpc/${n}`;
+  const cp=(label,val)=>`<div class="cprow"><span class="cplabel">${label}</span><code class="cpval">${esc(val)}</code><button class="btn soft sm" data-copy="${esc(val)}" type="button">Copy</button></div>`;
+  const me=members().find(m=>m.uid===myUid);
+  return `<section class="siri"><h3>Siri</h3>
+    <p>Say things like "Hey Siri, emptied the dishwasher" and it's logged${me?` for ${esc(me.name)}`:""}. Each shortcut uses the values below. Your key is private: it's what tells Leslie the shortcut is you, so don't share it.</p>
+    ${SIRI_KEY?`<div class="cprow"><span class="cplabel">Your Siri key</span><code class="cpval">${showKey?esc(SIRI_KEY):"••••••••••••••••"}</code><button class="btn soft sm" data-copy="${esc(SIRI_KEY)}" type="button">Copy</button><button class="linky" id="toggleKey" type="button">${showKey?"Hide":"Show"}</button></div>`:`<p class="sub">Loading your key…</p>`}
+    ${cp("API key (header named apikey)",SB_KEY)}
+    ${cp("Log a task URL",rpc("log_task"))}
+    ${cp("What's left URL",rpc("whats_left"))}
+    ${cp("Undo URL",rpc("undo_last"))}
+    <p class="sub" style="margin-top:10px">Lost a phone? <button class="linky" id="resetKey" type="button">Get a new key</button>. Your old shortcuts will stop working until you paste the new one in.</p>
+  </section>`;
 }
 document.addEventListener("submit",async e=>{
   if(e.target.id!=="authForm") return; e.preventDefault();
@@ -953,6 +976,10 @@ document.addEventListener("click",async e=>{
     try{ await navigator.clipboard.writeText(txt); toast("Invite copied. Paste it in a text."); }catch(err){ toast("Invite code: "+HHINFO.invite_code); }
     return;
   }
+  const cpy=t.closest("[data-copy]"); if(cpy){ try{ await navigator.clipboard.writeText(cpy.dataset.copy); toast("Copied"); }catch(err){ toast("Couldn't copy. Press and hold to select it instead."); } return; }
+  if(t.id==="toggleKey"){ showKey=!showKey; render(); return; }
+  if(t.id==="resetKey"){ if(!(await ask("Get a new Siri key? Your current shortcuts will stop working until you update them with the new key.","Get new key",true))) return;
+    const r=await sb.rpc("reset_my_key"); if(r.error){ toast("Couldn't reset the key. Try again."); return; } SIRI_KEY=r.data; showKey=true; render(); toast("New key ready. Update your shortcuts."); return; }
   if(t.id==="appSignOut"){ await sb.auth.signOut(); lsSet("home-base-me",null); location.reload(); return; }
 });
 document.addEventListener("keydown",e=>{ if(e.key==="Enter" && (e.target.id==="joinCode")){ e.preventDefault(); document.getElementById("joinGo").click(); } if(e.key==="Enter" && e.target.id==="joinName"){ e.preventDefault(); document.getElementById("joinNew").click(); } });
@@ -1473,6 +1500,7 @@ function managerHTML(){
         <label class="cb"><input type="checkbox" data-adult="${t.id}" ${isAdult(r,t)?"checked":""} ${dis}> Adults only</label>
         <label>Owner<select data-owner="${t.id}" ${dis}>${ownerOpts(t)}</select></label>
         <label>Room<select data-troom="${t.id}" ${dis}>${roomOpts(r.id)}</select></label>
+        <label class="phr">Siri phrases <span class="hint">other ways you'd say it, separated by commas</span><input type="text" data-aliases="${t.id}" value="${esc((t.aliases||[]).join(", "))}" placeholder="e.g. emptied the dishwasher" ${dis}></label>
         ${canWrite?`<button class="linky del" data-del="${t.id}" type="button">Delete</button>`:""}
       </div></div>`;
   };
@@ -1503,6 +1531,7 @@ function applySearch(){
 }
 function viewSettings(){
   return `<div class="settings">`+managerHTML()+`
+    `+siriHTML()+`
     <section><h3>Your account</h3><p>Signed in as ${esc(USER_EMAIL)}.</p><button class="btn soft" id="appSignOut" type="button">Sign out</button></section>
     <section><h3>Add a room</h3><p>Pick a type to start with a ready-made task list.</p>
       <div class="row">
@@ -1705,6 +1734,7 @@ document.addEventListener("change",e=>{
   if(ds.min){ const v=Number(t.value); if(v>0) patchTask(ds.min,{min:v}); return; }
   if(ds.adult){ patchTask(ds.adult,{adult:t.checked}); return; }
   if(ds.tcount){ const v=Math.max(1,Math.min(20,Number(t.value)||1)); patchTask(ds.tcount,{count:v}); return; }
+  if(ds.aliases!==undefined){ const list=t.value.split(",").map(x=>x.trim().toLowerCase()).filter(Boolean); patchTask(ds.aliases,{aliases:list}); toast(list.length?"Siri phrases saved":"Siri phrases cleared"); return; }
   if(ds.ttitle){ const v=t.value.trim(); if(v) patchTask(ds.ttitle,{title:v}); else render(); return; }
   if(ds.troom){ const tid=ds.troom, to=t.value; const tr=findRoom(to); openMRooms.add(to);
     updateRooms(rs=>{ let task=null; rs.forEach(r=>{ const i=r.tasks.findIndex(x=>x.id===tid); if(i>=0) task=r.tasks.splice(i,1)[0]; }); const r=rs.find(x=>x.id===to); if(task && r) r.tasks.push(task); })
