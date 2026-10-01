@@ -184,6 +184,34 @@ textarea.auto{display:block;width:100%;resize:none;overflow:hidden;background:va
 textarea.mtitle{font-weight:600}
 .roomHead{margin-top:4px}
 .hh section:first-child h3,.settings section:first-child h3{margin-top:2px}
+/* Rewards */
+.stakecard{background:var(--surface);border:2px solid var(--door);border-radius:12px;padding:14px 16px;display:grid;gap:4px}
+.stakecard strong{font-size:1.1rem}
+.owe{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.owe>div{display:grid;gap:2px}
+.owe.done{opacity:.7}
+.given{margin-top:12px}
+.given summary{cursor:pointer;color:var(--muted);font-weight:600}
+.rewardban{margin:4px 0 14px;padding:12px 16px;border-radius:12px;background:var(--soon-soft);font-weight:600}
+.owesline{margin-top:16px!important;font-weight:700;font-size:1.15rem!important}
+.rules{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:6px 0 16px}
+.rules summary{cursor:pointer;font-weight:700}
+.rules ol{padding-left:1.2rem;margin:12px 0}
+.rules li{margin-bottom:10px;color:var(--ink)}
+.board{display:grid;gap:14px;margin:10px 0 16px}
+.brow{display:grid;gap:6px}
+.bname{display:flex;align-items:center;gap:10px}
+.fin{font-size:.8rem;font-weight:700;color:var(--ok)}
+.track.fl{position:relative;overflow:visible}
+.track.fl em{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.why{margin-top:8px}
+.why summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:.9rem}
+.tr{border-top:1px solid var(--line);padding:10px 0}
+.trhead{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.tr p{margin:4px 0!important;color:var(--ink)!important;font-size:.92rem}
+.tr .sub{color:var(--muted)!important}
+.math{margin:4px 0 0;padding-left:1.2rem;font-size:.92rem}
+.pastwk{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:4px}
 /* Done tab */
 .wknav{display:flex;align-items:center;gap:14px;margin:16px 0 10px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
@@ -738,7 +766,7 @@ function validAsg(tid){ const a=asgOf(tid); return a && member(a) ? a : null; }
 function planItems(){
   const end=iso(addDays(curWk,6)), items=[];
   allTasks().forEach(({r,t})=>{
-    if(isNeed(t) && !ownerOf(t)) return;
+    if(isNeed(t)) return;
     if(t.every===0){ if(!lastDate(t)) items.push({r,t,load:taskLoad(r,t)}); return; }
     if(iso(dueDate(t))<=end) items.push({r,t,load:taskLoad(r,t)});
   });
@@ -747,6 +775,7 @@ function planItems(){
 function computeAssign(prevAssign, fixed){
   const ms=members().filter(m=>m.name && (m.share==null?1:m.share)>0);
   const loads={}; ms.forEach(m=>loads[m.id]=0);
+  const na=needAverages(); ms.forEach(m=>{ loads[m.id]+=na.avg[m.id]||0; });
   const assign={};
   Object.entries(fixed||{}).forEach(([tid,mid])=>{ const f=findTask(tid); if(!f) return; assign[tid]=mid; if(mid in loads) loads[mid]+=taskLoad(f.r,f.t); });
   planItems().forEach(it=>{ if(ownerOf(it.t) && !(it.t.id in assign)){ assign[it.t.id]=it.t.owner; if(it.t.owner in loads) loads[it.t.owner]+=it.load; } });
@@ -838,12 +867,16 @@ function makeSupaDB(){
     const {c,id}=split(path);
     if(c==="home" && id==="config"){
       const [a,b]=await Promise.all([
-        sb.from("house_config").select("start_date,rooms,v").eq("household_id",HH).maybeSingle(),
+        sb.from("house_config").select("start_date,rooms,v,reward").eq("household_id",HH).maybeSingle(),
         sb.from("members").select("id,name,share,adult,user_id,sort,created_at").eq("household_id",HH).order("sort").order("created_at")]);
       fail(a.error); fail(b.error);
       if(!a.data) return null;
-      return {start:a.data.start_date, rooms:a.data.rooms||[], v:a.data.v,
+      return {start:a.data.start_date, rooms:a.data.rooms||[], v:a.data.v, reward:a.data.reward||{label:"massage",cap:60},
         members:(b.data||[]).map(m=>({id:m.id,name:m.name,share:Number(m.share),adult:m.adult,uid:m.user_id||null}))};
+    }
+    if(c==="home" && id==="rewards"){
+      const r=await sb.from("reward_redemptions").select("week_start,recipient,redeemed_at,redeemed_by").eq("household_id",HH); fail(r.error);
+      const o={_init:1}; (r.data||[]).forEach(x=>o[x.week_start+"|"+x.recipient]={at:Date.parse(x.redeemed_at),by:x.redeemed_by||null}); return o;
     }
     if(c==="home" && id==="last"){
       const r=await sb.from("last_done").select("task_id,d,by_member").eq("household_id",HH); fail(r.error);
@@ -875,6 +908,7 @@ function makeSupaDB(){
       if(d.rooms!==undefined) patch.rooms=d.rooms;
       if(d.start!==undefined) patch.start_date=d.start;
       if(d.v!==undefined) patch.v=d.v;
+      if(d.reward!==undefined) patch.reward=d.reward;
       if(Object.keys(patch).length){ patch.updated_at=new Date().toISOString(); fail((await sb.from("house_config").update(patch).eq("household_id",HH)).error); }
       if(d.members!==undefined){
         const cur=(cache[path] && cache[path].members)||[];
@@ -886,6 +920,15 @@ function makeSupaDB(){
         }
         const keep=new Set(d.members.map(m=>m.id)), gone=cur.filter(m=>!keep.has(m.id)).map(m=>m.id);
         if(gone.length) fail((await sb.from("members").delete().eq("household_id",HH).in("id",gone)).error);
+      }
+      return refresh(path);
+    }
+    if(c==="home" && id==="rewards"){
+      for(const [k,v] of Object.entries(d)){
+        if(k.startsWith("_")) continue;
+        const [wk,rcp]=k.split("|"); if(!rcp) continue;
+        if(v==null) fail((await sb.from("reward_redemptions").delete().eq("household_id",HH).eq("week_start",wk).eq("recipient",rcp)).error);
+        else fail((await sb.from("reward_redemptions").upsert({household_id:HH,week_start:wk,recipient:rcp,redeemed_by:v.by||null},{onConflict:"household_id,week_start,recipient"})).error);
       }
       return refresh(path);
     }
@@ -923,6 +966,7 @@ function makeSupaDB(){
     on("house_config",()=>refreshSoon("home/config"));
     on("members",()=>refreshSoon("home/config"));
     on("last_done",()=>refreshSoon("home/last"));
+    on("reward_redemptions",()=>refreshSoon("home/rewards"));
     on("completions",()=>live("wkdone/").forEach(refreshSoon));
     on("week_plans",()=>live("weeks/").forEach(refreshSoon));
     ch.subscribe();
@@ -1063,6 +1107,7 @@ function subscribeAll(){
     maybePlan(); render();
   }, err);
   DB.doc(P.last).onSnapshot(s=>{ last=(s.exists && s.data()) ? clone(s.data()) : {}; render(); }, err);
+  DB.doc("home/rewards").onSnapshot(s=>{ redeemed=(s.exists && s.data()) ? clone(s.data()) : {}; render(); }, err);
   subscribeWeek();
 }
 let unsubWeek=[];
@@ -1075,7 +1120,10 @@ function subscribeWeek(){
     DB.doc(PD()).onSnapshot(s=>{ const d=s.exists?s.data():null; wkdone=d?clone(d):{}; if(!d || !d.created) ensureDoneDoc(); render(); }, err)
   ];
   hist={};
-  for(let i=1;i<=12;i++){ const w=shiftWeek(curWk,-i); DB.doc("wkdone/"+wkId(w)).get().then(s=>{ const d=s.exists?s.data():null; if(d && d.created){ hist[w]=clone(d); render(); } }).catch(()=>{}); }
+  histPlans={};
+  for(let i=1;i<=12;i++){ const w=shiftWeek(curWk,-i);
+    DB.doc("weeks/"+wkId(w)).get().then(s=>{ const d=s.exists?s.data():null; if(d && d.assign){ histPlans[w]=clone(d); render(); } }).catch(()=>{});
+    DB.doc("wkdone/"+wkId(w)).get().then(s=>{ const d=s.exists?s.data():null; if(d && d.created && Object.keys(d).some(k=>k.includes("~"))){ hist[w]=clone(d); render(); } }).catch(()=>{}); }
 }
 let donePromise=null;
 function ensureDoneDoc(){
@@ -1316,9 +1364,12 @@ function renderHeader(){
   if(view==="my" && me){
     const p=progress(me.id);
     if(!week){ head.textContent=`Hi, ${mName(me)}.`; lede.textContent="Setting up this week's plan…"; }
-    else if(!p.n){ head.textContent=`Nothing on your list, ${mName(me)}.`; lede.textContent="Pitch in on anything up for grabs below. It all counts toward your share."; }
-    else if(p.doneMin>=p.assigned-0.01){ head.textContent=`You're done for the week, ${mName(me)}.`; lede.textContent="Nice work. Anything extra you do still counts toward your share."; }
-    else { head.textContent=`${mName(me)}, ${hrs(p.assigned-p.doneMin)} left this week`; lede.textContent=`${p.nd} of ${p.n} tasks done. The week runs Monday to Sunday.`; }
+    else {
+      const a=analyzeWeek(curWk), x=a.per.find(q=>q.m.id===me.id);
+      if(!x || !x.assigned){ head.textContent=`Nothing on your list, ${mName(me)}.`; lede.textContent="Pitch in on anything up for grabs. It counts toward your total."; }
+      else if(x.finished){ head.textContent=`You crossed the finish line, ${mName(me)}.`; lede.textContent=`${Math.round(x.pct*100)}% of your list is done. Anything extra still counts.`; }
+      else { const toGo=Math.max(0, x.assigned*a.rc.grace/100 - x.listDone); head.textContent=`${mName(me)}, ${hrs(toGo)} to the finish line`; lede.textContent=`${Math.round(x.pct*100)}% of your list done; the finish line is ${a.rc.grace}%. The week runs Monday to Sunday.`; }
+    }
     return;
   }
   let over=0,today=0; allTasks().forEach(({t})=>{ const s=status(t); if(s.key==="overdue") over++; else if(s.key==="today") today++; });
@@ -1419,12 +1470,6 @@ function historyHTML(t){
     <div class="sparkx"><span>${esc(fmt(d14[0]))}</span><span>Today</span></div>
     ${who?`<div class="sub">By person: ${who}</div>`:""}</div>`;
 }
-function rankLine(mid){
-  const s=scores(wkdone); if(s.length<2) return "";
-  const i=s.findIndex(x=>x.m.id===mid); if(i<0) return "";
-  if(!s[i].pts) return "Not on the board yet this week.";
-  return i===0 ? `Leading the leaderboard with ${s[i].pts} pts.` : `#${i+1} on the leaderboard with ${s[i].pts} pts, ${s[0].pts-s[i].pts} behind ${esc(mName(s[0].m))}.`;
-}
 function viewMy(){
   const me=member(meId);
   if(!me) return `<p class="empty">Choose who you are to see your list.</p><button class="btn" data-switch type="button">Choose who I am</button>`;
@@ -1444,11 +1489,13 @@ function viewMy(){
   const pct=p.assigned?Math.min(100,Math.round(p.doneMin/p.assigned*100)):100;
   let h=`<div class="roomHead"><div><h2>Your week</h2><div class="sub">Week of ${fmt(curWk)}</div></div>
     ${canWrite?`<button class="linky" data-rebalance type="button" ${rebalancing?"disabled":""}>${rebalancing?"Rebalancing…":"Rebalance the week"}</button>`:""}</div>
-    <div class="progress"><div class="track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Your progress"><div class="fill" style="width:${pct}%"></div></div>
-    <div class="pmeta"><span>${hrs(p.doneMin)} of ${hrs(p.assigned)} done</span><span>${rankLine(me.id)}${p.credit>p.doneMin+0.5?` Plus ${hrs(p.credit-p.doneMin)} helping others.`:""}</span></div></div>`;
+    ${(()=>{ const a=analyzeWeek(curWk), x=a.per.find(q=>q.m.id===me.id)||{pct:0,listDone:0,assigned:0,need:0}; const pc=Math.min(100,Math.round(x.pct*100));
+      return `<div class="progress"><div class="track fl" role="progressbar" aria-valuenow="${pc}" aria-valuemin="0" aria-valuemax="100" aria-label="Your list progress"><div class="fill" style="width:${pc}%"></div><em style="left:${a.rc.grace}%"></em></div>
+      <div class="pmeta"><span>${pc}% of your list (${hrs(x.listDone)} of ${hrs(x.assigned)})</span><span>${rankLine(me.id)} As needed: ${hrs(x.need)}.</span></div></div>`; })()}`;
   if(daily.length) h+=`<div class="group"><h3>Every day<small>check off today's</small></h3>${daily.map(x=>taskRow(x.r,x.t,{where:1,dots:1,noChip:1})).join("")}</div>`;
   if(weekly.length) h+=`<div class="group"><h3>This week<small>${weekly.filter(x=>doneThisWeek(x.t)).length} of ${weekly.length} done</small></h3>${weekly.map(x=>taskRow(x.r,x.t,{where:1,noChip:1})).join("")}</div>`;
   if(!mine.length) h+=`<p class="empty">Nothing assigned to you this week.</p>`;
+  h+=rewardBanner();
   const day=new Date().getDay();
   if((day===0 || day===1) && (hist[shiftWeek(curWk,-1)] || weekData(curWk).length)) h+=`<button class="recapban" data-recap="${day===1 && hist[shiftWeek(curWk,-1)] ? shiftWeek(curWk,-1) : curWk}" type="button">▶ Your week in review is ready</button>`;
   const openGrabs=grabs.filter(x=>!doneThisWeek(x.t));
@@ -1546,12 +1593,13 @@ function buildRecap(ws){
         ${helped?`<div><span>Covered for others</span><strong>${helped} time${helped>1?"s":""}</strong></div>`:""}
       </div>`});
   });
-  const sc=scores(ws===curWk?wkdone:hist[ws]).filter(x=>x.pts>0);
-  if(sc.length){
-    const champ=sc[0], tie=sc[1] && sc[1].pts===champ.pts;
-    slides.push({bg:"var(--door)", dark:1, confetti:!tie, html:`<div class="kick">${ws===curWk?"So far this week":"This week's champion"}</div>
-      ${tie?`<h2>It's a tie!</h2>`:`<div class="crown">👑</div><h2>${esc(mName(champ.m))}</h2>`}
-      <ol class="final">${sc.map((x,i)=>`<li><span>${["🥇","🥈","🥉"][i]||"#"+(i+1)}</span><span>${esc(mName(x.m))}</span><strong>${x.pts} pts</strong></li>`).join("")}</ol>`});
+  const oc=analyzeWeek(ws);
+  if(oc.per.length>1){
+    const winners=oc.outcome==="all"?oc.per:oc.outcome==="some"?oc.per.filter(x=>x.finished):[];
+    slides.push({bg:"var(--door)", dark:1, confetti:winners.length>0, html:`<div class="kick">${ws===curWk?"So far this week":"The result"}</div>
+      ${oc.outcome==="all"?`<div class="crown">👑👑</div><h2>You both won!</h2>`:oc.outcome==="some"?`<div class="crown">👑</div><h2>${winners.map(x=>esc(mName(x.m))).join(" & ")}</h2>`:`<h2>No winner this week</h2>`}
+      <ol class="final">${oc.per.slice().sort((p,q)=>q.pct-p.pct).map(x=>`<li><span>${x.finished?"✓":"…"}</span><span>${esc(mName(x.m))}</span><strong>${pctTxt(x.pct)}</strong></li>`).join("")}</ol>
+      ${oc.massages.length?`<p class="owesline">💆 ${oc.massages.map(m=>`${esc(mName(m.to))} gets ${m.minutes} min from ${esc(mName(m.from))}`).join("; ")}</p>`:""}`});
   }
   return slides;
 }
@@ -1619,30 +1667,154 @@ function viewRooms(){
   return h;
 }
 
-function leaderboardHTML(){
-  const s=scores(wkdone);
-  if(!s.length) return "";
-  const past=[1,2,3].map(i=>shiftWeek(curWk,-i)).filter(w=>hist[w]).map(w=>({w,c:champ(hist[w])}));
-  const wins={}; past.forEach(x=>{ if(x.c) wins[x.c.m.id]=(wins[x.c.m.id]||0)+1; });
-  const top=Math.max(1,s[0].pts);
-  const medal=["🥇","🥈","🥉"];
-  const lastWk=past.find(x=>x.w===shiftWeek(curWk,-1));
-  return `<section><h3>This week's leaderboard</h3>
-    <p>Points are minutes of work done, adjusted for each person's share, so a half-share kid earns double points per minute. Resets every Monday.</p>
-    ${lastWk && lastWk.c?`<p class="champ">👑 Last week's champion: <strong>${esc(mName(lastWk.c.m))}</strong> with ${lastWk.c.pts} pts</p>`:""}
-    <ol class="lb">${s.map((x,i)=>{
-      const tied=i>0 && x.pts===s[i-1].pts;
-      const rank=tied? "" : (x.pts? (medal[i]||`#${i+1}`) : "");
-      const p=progress(x.m.id);
-      return `<li class="${i===0&&x.pts?"lead":""}"><span class="rk">${rank}</span>
-        <div><div class="lbname">${chip(x.m)}${wins[x.m.id]?`<span class="wins" title="Weekly wins in the last 3 weeks">${"👑".repeat(wins[x.m.id])}</span>`:""}</div>
-          <div class="fbar" style="--c:${mColor(x.m)}"><span style="width:${x.pts/top*100}%"></span></div>
-          <div class="fnote">${hrs(x.min)} of work, ${p.nd} of ${p.n} of their tasks done</div></div>
-        <span class="pts">${x.pts}<small>pts</small></span></li>`;
-    }).join("")}</ol>
-    ${past.length?`<p class="sub" style="margin-top:12px">Past champions: ${past.map(x=>`week of ${fmt(x.w)}, ${x.c?esc(mName(x.c.m)):"tie"}`).join("; ")}</p>`:""}
+let redeemed={}, histPlans={};
+function rewardCfg(){
+  const r=(cfg && cfg.reward)||{};
+  const cap=Math.max(1,Number(r.cap)||60), base=Math.min(cap,Math.max(0,r.base==null?30:Number(r.base)));
+  return {label:(r.label||"massage").trim()||"massage", cap, base, grace:Math.min(100,Math.max(50,Number(r.grace)||90)), avgWeeks:Math.max(1,Math.min(8,Number(r.avgWeeks)||3))};
+}
+const needLimit = t => Math.max(1, Math.ceil(perWeek(t)));
+function entryList(entries){
+  const out=[]; Object.entries(entries||{}).forEach(([k,v])=>{ if(!v || typeof v!=="object" || !v.by || !k.includes("~")) return;
+    const p=k.split("~"); out.push({tid:p[0], d:p[1], by:v.by, with:Array.isArray(v.with)?v.with.filter(x=>x && x!==v.by):[], min:Number(v.min)||0, at:v.at||0}); });
+  return out.sort((a,b)=>(a.at||0)-(b.at||0));
+}
+// Everything about one week: each person's list, what got done, as-needed credit, and the outcome
+function analyzeWeek(ws){
+  const rc=rewardCfg();
+  const entries = ws===curWk ? wkdone : (hist[ws]||{});
+  const plan = ws===curWk ? ((week&&week.assign)||{}) : ((histPlans[ws]&&histPlans[ws].assign)||{});
+  const E=entryList(entries);
+  const ms=members().filter(m=>m.name && (m.share==null?1:m.share)>0);
+  const per={}; ms.forEach(m=>per[m.id]={m, assigned:0, listDone:0, items:[], covered:{}, need:0, needTasks:{}});
+  // 1. each person's assigned list (as-needed tasks are never on a list)
+  Object.entries(plan).forEach(([tid,mid])=>{ const f=findTask(tid); if(!f || isNeed(f.t)) return; const who=ownerOf(f.t)||mid; if(!per[who]) return;
+    const load=taskLoad(f.r,f.t); per[who].assigned+=load; per[who].items.push({f,load}); });
+  // 2. list credit: listed work counts for whoever did it, capped at one full share of each task
+  const acc={}, doneCount={};
+  E.forEach(e=>{ const f=findTask(e.tid); if(!f || isNeed(f.t)) return; doneCount[e.tid]=(doneCount[e.tid]||0)+1;
+    const ppl=[e.by].concat(e.with), each=e.min/ppl.length; ppl.forEach(p=>{ const k=p+"|"+e.tid; acc[k]=(acc[k]||0)+each; }); });
+  Object.entries(acc).forEach(([k,v])=>{ const [p,tid]=k.split("|"); const f=findTask(tid); if(!per[p] || !f) return;
+    const got=Math.min(v,taskLoad(f.r,f.t)); per[p].listDone+=got;
+    const owner=ownerOf(f.t)||plan[tid]; if(owner && owner!==p) per[p].covered[tid]=(per[p].covered[tid]||0)+got; });
+  // 3. which list items were left undone (for the explanation)
+  Object.values(per).forEach(x=>x.items.forEach(it=>{ const t=it.f.t, n=doneCount[t.id]||0;
+    if(t.every===1){ const need=7*perDay(t); it.state = n>=need ? "done" : `${n} of ${need}`; it.missing = n<need; }
+    else { const done = n>0 || (lastDate(t) && lastDate(t)>=ws && lastDate(t)<=iso(addDays(ws,6))); it.state = done ? "done" : "not done"; it.missing=!done; } }));
+  // 4. as-needed credit, with each task's weekly limit
+  const byTask={}; E.forEach(e=>{ const f=findTask(e.tid); if(f && isNeed(f.t)) (byTask[e.tid]=byTask[e.tid]||[]).push(e); });
+  Object.entries(byTask).forEach(([tid,list])=>{ const f=findTask(tid), lim=needLimit(f.t);
+    list.forEach((e,i)=>{ const ppl=[e.by].concat(e.with), each=e.min/ppl.length, counted=i<lim;
+      ppl.forEach(p=>{ if(!per[p]) return; const nt=per[p].needTasks[tid]=per[p].needTasks[tid]||{title:f.t.title, n:0, counted:0, min:0, limit:lim};
+        nt.n++; if(counted){ nt.counted++; nt.min+=each; per[p].need+=each; } }); }); });
+  const arr=Object.values(per);
+  arr.forEach(x=>{ x.pct = x.assigned ? x.listDone/x.assigned : 1; x.finished = x.pct*100 >= rc.grace-1e-9; });
+  // 5. outcome and massages
+  const fin=arr.filter(x=>x.finished), not=arr.filter(x=>!x.finished), massages=[]; let outcome;
+  if(arr.length<2) outcome="solo";
+  else if(!not.length){
+    outcome="all";
+    const minNeed=Math.min(...arr.map(x=>x.need));
+    arr.forEach((x,i)=>{ const giver=arr[(i+1)%arr.length]; const bonus=Math.max(0,Math.min(rc.cap-rc.base, Math.round(x.need-minNeed)));
+      massages.push({to:x.m, from:giver.m, minutes:rc.base+bonus, base:rc.base, bonus}); });
+  } else if(!fin.length) outcome="none";
+  else {
+    outcome="some";
+    const best=fin.slice().sort((a,b)=>b.pct-a.pct)[0];
+    not.forEach(x=>{ const extra=Math.round(60*(1-x.pct)); massages.push({to:best.m, from:x.m, minutes:Math.min(rc.cap, rc.base+extra), base:rc.base, extra, left:Math.round((1-x.pct)*100)}); });
+  }
+  return {ws, per:arr, outcome, massages, rc};
+}
+// Average as-needed minutes per person over recent finished weeks (used to lighten next week's list)
+function needAverages(){
+  const rc=rewardCfg(), weeks=Object.keys(hist).filter(w=>w<curWk).sort().reverse().slice(0,rc.avgWeeks);
+  const avg={}; members().forEach(m=>avg[m.id]=0);
+  if(weeks.length){ weeks.forEach(w=>analyzeWeek(w).per.forEach(x=>{ avg[x.m.id]+=x.need/weeks.length; })); return {avg, weeks:weeks.length, fallback:false}; }
+  allTasks().forEach(({r,t})=>{ if(isNeed(t) && ownerOf(t)) avg[t.owner]=(avg[t.owner]||0)+unitMin(r,t)*perWeek(t); });
+  return {avg, weeks:0, fallback:true};
+}
+const pctTxt = x => Math.round(x*100)+"%";
+function outcomeHeadline(a, live){
+  const pre = live ? "If the week ended now: " : "";
+  if(a.outcome==="solo") return "Add another person to start keeping score.";
+  if(a.outcome==="all") return pre+"you both finished, so you both win. "+a.massages.map(m=>`${esc(mName(m.to))} gets ${m.minutes} min`).join(", ")+".";
+  if(a.outcome==="none") return pre+"nobody reached the finish line, so no massages.";
+  return pre+a.massages.map(m=>`${esc(mName(m.from))} owes ${esc(mName(m.to))} a ${m.minutes}-minute ${esc(a.rc.label)}`).join("; ")+".";
+}
+function traceHTML(a){
+  const rc=a.rc;
+  const person = x => {
+    const missing=x.items.filter(i=>i.missing), covered=Object.entries(x.covered);
+    const needs=Object.values(x.needTasks).sort((p,q)=>q.min-p.min);
+    return `<div class="tr"><div class="trhead">${chip(x.m)} <strong>${x.finished?"✓ Finished":"Not finished"}</strong></div>
+      <p>List: <strong>${hrs(x.listDone)}</strong> done of <strong>${hrs(x.assigned)}</strong> assigned = <strong>${pctTxt(x.pct)}</strong> (finish line ${rc.grace}%).</p>
+      ${missing.length?`<p class="sub">Left undone: ${missing.map(i=>`${esc(i.f.t.title)} (${i.state})`).join("; ")}.</p>`:(x.items.length?`<p class="sub">Every list item was done.</p>`:"")}
+      ${covered.length?`<p class="sub">Covered from someone else's list: ${covered.map(([tid,m])=>{ const f=findTask(tid); return `${esc(f?f.t.title:"task")} (${hrs(m)})`; }).join("; ")}. This counts toward ${esc(mName(x.m))}'s total.</p>`:""}
+      <p>As needed: <strong>${hrs(x.need)}</strong>${needs.length?`: ${needs.map(n=>`${esc(n.title)} ×${n.n}${n.counted<n.n?` (${n.counted} counted, weekly limit ${n.limit})`:""}`).join("; ")}`:" (none)"}.</p>
+    </div>`;
+  };
+  let math="";
+  if(a.outcome==="all"){
+    const minNeed=Math.min(...a.per.map(x=>x.need));
+    math=a.massages.map(m=>{ const x=a.per.find(p=>p.m.id===m.to.id);
+      return m.bonus ? `<li>${esc(mName(m.to))} gets ${m.base} min + ${m.bonus} min for doing ${hrs(x.need-minNeed)} more as-needed work${m.base+Math.round(x.need-minNeed)>rc.cap?` (capped at ${rc.cap})`:""} = <strong>${m.minutes} min</strong>, from ${esc(mName(m.from))}.</li>`
+        : `<li>${esc(mName(m.to))} gets the base <strong>${m.minutes} min</strong>, from ${esc(mName(m.from))}.</li>`; }).join("");
+  } else if(a.outcome==="some"){
+    math=a.massages.map(m=>`<li>${esc(mName(m.from))} finished ${100-m.left}% of their list, leaving ${m.left}% undone: ${m.base} min + ${m.extra} min (6 min per 10% undone)${m.base+m.extra>rc.cap?`, capped at ${rc.cap}`:""} = <strong>${m.minutes} min</strong> for ${esc(mName(m.to))}.</li>`).join("");
+  } else if(a.outcome==="none") math=`<li>Nobody reached ${rc.grace}% of their list.</li>`;
+  return `${a.per.map(person).join("")}${math?`<p style="margin-top:10px"><strong>The math</strong></p><ul class="math">${math}</ul>`:""}`;
+}
+function rulesHTML(){
+  const rc=rewardCfg(), na=needAverages();
+  return `<details class="rules"><summary>How winning works</summary>
+    <ol>
+      <li><strong>Your list.</strong> Each Monday the week's tasks are split fairly by estimated time. That's your list. "As it comes up" tasks are never on anyone's list.</li>
+      <li><strong>Finishing.</strong> You've finished when you've done at least <strong>${rc.grace}%</strong> of your list's time. Daily tasks count every day; missing a day or two won't sink you. If you do a task from someone else's list, that time counts toward <em>your</em> total, so helping never hurts you.</li>
+      <li><strong>You both finish:</strong> you both win and trade ${esc(rc.label)}s: <strong>${rc.base} minutes</strong> each. Whoever did more as-needed work that week gets an extra minute for every minute of difference, up to <strong>${rc.cap}</strong> total.</li>
+      <li><strong>Only one of you finishes:</strong> they win. The other owes a ${esc(rc.label)} of ${rc.base} minutes + 6 minutes for every 10% of their own list left undone, up to ${rc.cap}.</li>
+      <li><strong>Neither finishes:</strong> no ${esc(rc.label)}s that week.</li>
+      <li><strong>As-needed work lightens next week.</strong> Each person's average as-needed time over the last ${rc.avgWeeks} weeks counts as work already done when the next list is made, so whoever carries more of it gets a lighter list. Right now: ${members().filter(m=>m.name).map(m=>`${esc(m.name)} ${hrs(na.avg[m.id]||0)}`).join(", ")}${na.fallback?" (an estimate from owned as-needed tasks until there's a finished week of history)":` a week, from the last ${na.weeks} week${na.weeks>1?"s":""}`}.</li>
+      <li><strong>No farming.</strong> Each as-needed task only counts up to its "about how many a week" setting. Extra taps are still logged in the Done tab but don't earn credit.</li>
+    </ol>
+    ${canWrite?`<div class="row"><label style="flex:1 1 160px">Reward<input type="text" id="rwLabel" value="${esc(rc.label)}"></label>
+      <label>Base minutes<input type="number" id="rwBase" min="0" max="600" value="${rc.base}"></label>
+      <label>Max minutes<input type="number" id="rwCap" min="1" max="600" value="${rc.cap}"></label>
+      <label>Finish line %<input type="number" id="rwGrace" min="50" max="100" value="${rc.grace}"></label>
+      <label>As-needed average (weeks)<input type="number" id="rwAvg" min="1" max="8" value="${rc.avgWeeks}"></label></div>`:""}
+  </details>`;
+}
+function rewardsHTML(){
+  const now=analyzeWeek(curWk);
+  const past=Object.keys(hist).filter(w=>w<curWk).sort().reverse().map(analyzeWeek);
+  const key=(ws,m)=>ws+"|"+m.to.id;
+  return `<section class="stakes"><h3>This week's race</h3>
+    ${rulesHTML()}
+    <div class="board">${now.per.map(x=>`<div class="brow"><div class="bname">${chip(x.m)}${x.finished?`<span class="fin">✓ Finished</span>`:""}</div>
+      <div class="fbar" style="--c:${mColor(x.m)}"><span style="width:${Math.min(100,x.pct*100)}%"></span><em style="left:calc(${now.rc.grace}% - 1px)"></em></div>
+      <div class="fnote">${pctTxt(x.pct)} of list (${hrs(x.listDone)} of ${hrs(x.assigned)}). Above and beyond: ${hrs(x.need)} as needed.</div></div>`).join("")}</div>
+    <div class="stakecard"><span class="kick">If the week ended now</span><strong>${outcomeHeadline(now,false)}</strong>
+      <details class="why"><summary>Why?</summary>${traceHTML(now)}</details></div>
+    ${past.length?`<h3 style="font-size:1.15rem;margin-top:26px">Past weeks</h3>${past.map(a=>`<div class="pastwk"><div class="sub">Week of ${fmt(a.ws)}</div><strong>${outcomeHeadline(a,false)}</strong>
+      ${a.massages.map(m=>{ const k=key(a.ws,m), r=redeemed[k];
+        return `<div class="owe ${r?"done":""}"><span>${r?"✓ ":""}${esc(mName(m.from))} → ${esc(mName(m.to))}: ${m.minutes}-minute ${esc(a.rc.label)}</span>${canWrite?(r?`<button class="linky" data-unredeem="${k}" type="button">Undo</button>`:`<button class="btn sm" data-redeem="${k}" type="button">Mark as given</button>`):""}</div>`; }).join("")}
+      <details class="why"><summary>Why?</summary>${traceHTML(a)}</details></div>`).join("")}`:""}
   </section>`;
 }
+function rewardBanner(){
+  if(!meId) return "";
+  const prev=shiftWeek(curWk,-1); if(!hist[prev]) return "";
+  const a=analyzeWeek(prev), rc=a.rc, out=[];
+  a.massages.forEach(m=>{ if(redeemed[prev+"|"+m.to.id]) return;
+    if(m.to.id===meId) out.push(`💆 ${esc(mName(m.from))} owes you a ${m.minutes}-minute ${esc(rc.label)} from last week.`);
+    else if(m.from.id===meId) out.push(`💆 You owe ${esc(mName(m.to))} a ${m.minutes}-minute ${esc(rc.label)} from last week.`); });
+  return out.length?`<div class="rewardban">${out.join("<br>")}</div>`:"";
+}
+function rankLine(mid){
+  const a=analyzeWeek(curWk), x=a.per.find(p=>p.m.id===mid); if(!x) return "";
+  return x.finished ? `✓ Past the finish line (${a.rc.grace}%).` : `Finish line: ${a.rc.grace}% of your list.`;
+}
+function leaderboardHTML(){ return ""; }
+
 function viewFamily(){
   const ms=members();
   const named=ms.filter(m=>m.name);
@@ -1650,7 +1822,7 @@ function viewFamily(){
   const credits=creditsIn(wkdone);
   const totalCredit=Object.values(credits).reduce((a,b)=>a+b,0);
   let planned=0; if(week) Object.entries(effAssign()).forEach(([tid])=>{ const f=findTask(tid); if(f) planned+=taskLoad(f.r,f.t); });
-  let h=`<div class="hh">`+recapButtons()+leaderboardHTML()+`<section><h3>This week's split</h3>
+  let h=`<div class="hh">`+recapButtons()+rewardsHTML()+`<section><h3>This week's split</h3>
     <p>Bars show each person's share of the work actually done this week. The line marks their fair share. Time counts for whoever did the task, assigned or not.</p>
     <div class="fair">${named.map(m=>{
       const target=(m.share==null?1:m.share)/totalShare*100;
@@ -1844,6 +2016,8 @@ document.addEventListener("click",e=>{
   const tab=t.closest("nav.tabs [data-view]"); if(tab){ view=tab.dataset.view; openEdit=null; render(); return; }
   if(t.closest("[data-switch]")){ lsSet("home-base-me",null); meId=null; switching=true; showPicker=true; pickerSkipped=false; render(); return; }
   const d=t.closest("[data-done]"); if(d){ toggle(d.dataset.done); return; }
+  const rd=t.closest("[data-redeem]"); if(rd){ write("home/rewards","update",{[rd.dataset.redeem]:{by:meId||null}}).then(()=>toast("Marked as given. Enjoy!")); return; }
+  const ur=t.closest("[data-unredeem]"); if(ur){ write("home/rewards","update",{[ur.dataset.unredeem]:null}); return; }
   const rc=t.closest("[data-recap]"); if(rc){ openRecap(rc.dataset.recap); return; }
   const dw=t.closest("[data-dwk]"); if(dw){ if(dw.dataset.dwk){ doneWk=dw.dataset.dwk; render(); } return; }
   const dh=t.closest("[data-dwho]"); if(dh){ doneWho=dh.dataset.dwho; render(); return; }
@@ -1937,6 +2111,11 @@ document.addEventListener("change",e=>{
   if(ds.freq){ patchTask(ds.freq,freqPatch(t.value)); return; }
   if(ds.min){ const v=Number(t.value); if(v>0) patchTask(ds.min,{min:v}); return; }
   if(ds.adult){ patchTask(ds.adult,{adult:t.checked}); return; }
+  if(t.id==="rwLabel"){ const v=t.value.trim(); if(v) write(P.config,"update",{reward:Object.assign({},rewardCfg(),{label:v})}); return; }
+  if(t.id==="rwCap"){ const v=Math.max(1,Math.min(600,Number(t.value)||60)); write(P.config,"update",{reward:Object.assign({},rewardCfg(),{cap:v})}); return; }
+  if(t.id==="rwBase"){ const v=Math.max(0,Math.min(600,Number(t.value)||0)); write(P.config,"update",{reward:Object.assign({},rewardCfg(),{base:v})}); return; }
+  if(t.id==="rwGrace"){ const v=Math.max(50,Math.min(100,Number(t.value)||90)); write(P.config,"update",{reward:Object.assign({},rewardCfg(),{grace:v})}); return; }
+  if(t.id==="rwAvg"){ const v=Math.max(1,Math.min(8,Number(t.value)||3)); write(P.config,"update",{reward:Object.assign({},rewardCfg(),{avgWeeks:v})}); return; }
   if(ds.tcount){ const v=Math.max(1,Math.min(20,Number(t.value)||1)); patchTask(ds.tcount,{count:v}); return; }
   if(ds.aliases!==undefined){ const list=t.value.split(",").map(x=>x.trim().toLowerCase()).filter(Boolean); patchTask(ds.aliases,{aliases:list}); toast(list.length?"Siri phrases saved":"Siri phrases cleared"); return; }
   if(ds.ttitle){ const v=t.value.trim(); if(v) patchTask(ds.ttitle,{title:v}); else render(); return; }
