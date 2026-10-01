@@ -246,6 +246,14 @@ button.roof.sel .chimney{background:var(--door)}
 .ybadge text{font:700 11px var(--sans);fill:#fff}
 @media(max-width:520px){ .cells{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))} .cell{min-height:66px;padding:8px 8px 26px} .estate{grid-template-columns:58px 1fr} .gname{font-size:.75rem} .gbody{padding:6px 5px 0} }
 @media (prefers-reduced-motion: reduce){ .yitem:hover>*{transform:none} }
+.brand{flex-wrap:wrap}
+.searchbtn{background:var(--surface);border:1px solid var(--line);border-radius:999px;width:38px;height:38px;font-size:1rem;display:grid;place-items:center;padding:0;margin-left:8px}
+.searchov{align-items:start;padding-top:calc(env(safe-area-inset-top,0px) + 16px)}
+.searchsheet{max-width:640px;max-height:86vh;overflow:auto}
+#searchInput{font-size:1rem;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);min-width:0}
+.searchsheet .task{grid-template-columns:40px 1fr}
+.searchsheet .stat{grid-column:2;text-align:left}
+.askq{font-weight:700;font-size:1rem;margin-bottom:2px}
 /* Done tab */
 .wknav{display:flex;align-items:center;gap:14px;margin:16px 0 10px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
@@ -397,6 +405,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8v10H3z" fill="var(--roof)"/><rect x="10" y="14" width="4" height="7" fill="var(--door)"/></svg>
     Leslie
     <span class="who" id="who"></span>
+    <button class="searchbtn" data-search type="button" aria-label="Search tasks">🔍</button>
   </div>
   <h1 class="head" id="head">Loading your house…</h1>
   <p class="lede" id="lede"></p>
@@ -890,7 +899,11 @@ function handleWriteError(e){
 }
 function updateRooms(fn){ const rs=clone(cfg.rooms); fn(rs); return write(P.config,"update",{rooms:rs}); }
 function updateMembers(fn){ const ms=clone(cfg.members||[]); fn(ms); return write(P.config,"update",{members:ms}); }
-function patchTask(tid,patch){ return updateRooms(rs=>{ for(const r of rs){ const t=r.tasks.find(x=>x.id===tid); if(t){ Object.assign(t,patch); break; } } }); }
+function patchTask(tid,patch){
+  if(!canWrite) return Promise.resolve();
+  if(DB && DB.patchTask) return DB.patchTask(tid,patch).catch(handleWriteError);
+  return updateRooms(rs=>{ for(const r of rs){ const t=r.tasks.find(x=>x.id===tid); if(t){ Object.assign(t,patch); break; } } });
+}
 const PD = () => "wkdone/"+wkId(curWk);
 const PW = () => "weeks/"+wkId(curWk);
 
@@ -1021,7 +1034,8 @@ function makeSupaDB(){
   const all=()=>Object.keys(subs).filter(p=>subs[p].length).forEach(refreshSoon);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden) all(); });
   setInterval(()=>{ if(!document.hidden) all(); },60000);
-  return { startRealtime, doc(path){ return {
+  async function patchTaskRPC(tid,patch){ fail((await sb.rpc("patch_task",{p_task_id:tid,p_patch:patch})).error); await refresh("home/config"); }
+  return { startRealtime, patchTask:patchTaskRPC, doc(path){ return {
     get: async()=>{ cache[path]=await fetchDoc(path); return snap(path); },
     set: d=>write(path,"set",d),
     update: d=>write(path,"update",d),
@@ -1387,7 +1401,7 @@ function howtoSheet(){
 let pendingRender=false;
 function render(){
   const a=document.activeElement;
-  if(a && a.closest && a.closest("#view,#overlay") && a.matches('input[type=text],input[type=number],textarea')){ pendingRender=true; return; }
+  if(a && a.closest && a.closest("#view,#overlay") && a.matches('input[type=text],input[type=number],input[type=search],textarea')){ pendingRender=true; return; }
   pendingRender=false;
   renderHeader();
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.view===view)));
@@ -1477,7 +1491,7 @@ function taskRow(r,t,o){
   }
   return `<div class="task ${cls}">
     <button class="check ${on?"on":""}" data-done="${t.id}" aria-pressed="${on}" ${canWrite?"":"disabled"} aria-label="${isNeed(t)||perDay(t)>1?"Log one more: ":on?"Undo: ":"Mark done: "}${esc(t.title)}">${CHECK}</button>
-    <div>${o.where?`<div class="where">${esc(r.name)}</div>`:""}
+    <div>${o.ask?`<div class="askq">${esc(o.ask)}</div>`:""}${o.where?`<div class="where">${esc(r.name)}</div>`:""}
       <button class="ttl" data-open="${t.id}" aria-expanded="${openEdit===t.id}">${esc(t.title)}</button>
       ${t.tip && !o.noTip?`<div class="tip">${esc(t.tip)}</div>`:""}
       <div class="meta">${o.noChip?"":(a?chip(member(a))+(ownerOf(t)?"<span>owns this</span>":""):(week && t.id in (week.assign||{}) || o.showGrab)?`<span>Up for grabs</span>`:"")}
@@ -1554,11 +1568,58 @@ function viewMy(){
   return h;
 }
 
+// ---------------- Search ----------------
+const STOP=new Set("the and for any some did just with that this there task tasks leslie chore chores need needs what have has was are our your my its done up out off all get got again".split(" "));
+function stemsOf(q){ return [...new Set(q.toLowerCase().replace(/\b(dog|dogs|pup|puppy|doggo)\b/g,"oppie").replace(/[^a-z ]/g," ").split(/\s+/)
+  .filter(w=>w.length>=3 && !STOP.has(w)).map(w=>w.replace(/(ing|ed|es|s)$/,"").replace(/(.)\1$/,"$1")).filter(w=>w.length>=3))]; }
+function searchScore(q, r, t){
+  const ql=q.trim().toLowerCase(); if(!ql) return 0;
+  const title=t.title.toLowerCase(), al=(t.aliases||[]).join(" ").toLowerCase(), room=r.name.toLowerCase(), tip=(t.tip||"").toLowerCase();
+  if(title===ql) return 10;
+  if(title.includes(ql) || al.includes(ql)) return 5;
+  if(room.includes(ql)) return 2;
+  const st=stemsOf(ql); if(!st.length) return 0;
+  const hay=title+" "+al+" "+room; let hits=0, tips=0;
+  st.forEach(w=>{ if(hay.includes(w)) hits++; else if(tip.includes(w)) tips++; });
+  return (hits/st.length)*0.75+(tips/st.length)*0.2;
+}
+let searchOpen=false, searchQ="";
+function searchResultsHTML(){
+  const q=searchQ.trim();
+  if(!q) return `<p class="sub" style="margin-top:12px">Try "dishes", "dog food", "gutters", "smoke detector", or a room name.</p>`;
+  const res=allTasks().map(x=>({...x, s:searchScore(q,x.r,x.t)})).filter(x=>x.s>=0.3).sort((a,b)=>b.s-a.s).slice(0,25);
+  if(!res.length) return `<p class="empty">No tasks match "${esc(q)}". You can add one in Settings → All tasks.</p>`;
+  return `<p class="sub" style="margin:10px 0 0">${res.length} match${res.length===1?"":"es"}. Tap a name for settings, how-tos, or to log an earlier day.</p>`+
+    res.map(x=>taskRow(x.r,x.t,{where:1,showGrab:1})).join("");
+}
+function searchSheetHTML(){
+  return `<div class="overlay searchov" data-searchbg role="dialog" aria-modal="true" aria-label="Search tasks"><div class="sheet searchsheet">
+    <div class="row" style="align-items:center;flex-wrap:nowrap"><input type="search" id="searchInput" value="${esc(searchQ)}" placeholder="Search tasks…" autocomplete="off" aria-label="Search tasks" style="flex:1">
+      <button class="btn soft" data-searchclose type="button">Close</button></div>
+    <div id="searchResults">${searchResultsHTML()}</div></div></div>`;
+}
+// ---------------- "Worth a look" suggestions ----------------
+let SUGG=null, suggAt=0, suggLoading=false;
+async function loadSuggestions(force){
+  if(suggLoading || (!force && Date.now()-suggAt<15000)) return;
+  suggLoading=true;
+  try{ const r=await sb.rpc("my_suggestions",{p_limit:6}); if(!r.error){ SUGG=r.data||[]; suggAt=Date.now(); if(view==="any") render(); } }catch(e){}
+  suggLoading=false;
+}
+function suggestionsHTML(){
+  if(SUGG===null){ loadSuggestions(); return ""; }
+  if(Date.now()-suggAt>15000) loadSuggestions();
+  const items=SUGG.map(s=>({s, f:findTask(s.task_id)})).filter(x=>x.f);
+  if(!items.length) return `<div class="group"><h3>Worth a look<small>nothing jumps out right now</small></h3></div>`;
+  return `<div class="group"><h3>Worth a look<small>probably needed, and nobody's on it</small></h3>${items.map(x=>taskRow(x.f.r,x.f.t,{where:1,noChip:1,ask:x.s.question})).join("")}</div>`;
+}
+
 // ---------------- Anytime tab ----------------
 function viewAny(){
   const me=member(meId);
   const list=allTasks().filter(x=>isNeed(x.t) && (!ownerOf(x.t) || x.t.owner===meId));
   let h=`<div class="roomHead"><div><h2>As it comes up</h2><div class="sub">Tap each time you do one. These aren't on anyone's weekly list, but every one counts toward the leaderboard for whoever does it.</div></div></div>`;
+  h+=suggestionsHTML();
   if(!list.length) return h+`<p class="empty">No "as it comes up" tasks yet. In Settings → All tasks, set a task's frequency to As it comes up.</p>`;
   const mine=list.filter(x=>ownerOf(x.t)), shared=list.filter(x=>!ownerOf(x.t));
   const byRoom=arr=>{ const g={}; arr.forEach(x=>{ (g[x.r.id]=g[x.r.id]||{r:x.r,ts:[]}).ts.push(x); }); return Object.values(g); };
@@ -2081,6 +2142,7 @@ function managerHTML(){
         <label class="cb"><input type="checkbox" data-adult="${t.id}" ${isAdult(r,t)?"checked":""} ${dis}> Adults only</label>
         <label>Owner<select data-owner="${t.id}" ${dis}>${ownerOpts(t)}</select></label>
         <label>Room<select data-troom="${t.id}" ${dis}>${roomOpts(r.id)}</select></label>
+        ${isNeed(t)?`<label class="phr">Check question <span class="hint">what "Worth a look" and Siri ask about this task</span><textarea class="auto" rows="1" data-ask="${t.id}" placeholder="e.g. Is the dishwasher ready to unload?" ${dis}>${esc(t.ask||"")}</textarea></label>`:""}
         <label class="phr">Siri phrases <span class="hint">other ways you'd say it, separated by commas</span><textarea class="auto" rows="1" data-aliases="${t.id}" placeholder="e.g. emptied the dishwasher" ${dis}>${esc((t.aliases||[]).join(", "))}</textarea></label>
         ${canWrite?`<button class="linky del" data-del="${t.id}" type="button">Delete</button>`:""}
       </div></div>`;
@@ -2130,6 +2192,14 @@ function viewSettings(){
 
 function renderOverlay(){
   const o=document.getElementById("overlay");
+  if(phase==="ready" && searchOpen && !daySheet && !logSheet && !howtoOpen){
+    const prevIn=o.querySelector("#searchInput"), had=prevIn && document.activeElement===prevIn, sel=prevIn?prevIn.selectionStart:null, sc=o.querySelector(".searchsheet");
+    const y=sc?sc.scrollTop:0;
+    if(!prevIn){ o.innerHTML=searchSheetHTML(); const i=o.querySelector("#searchInput"); if(i) i.focus(); }
+    else { const box=o.querySelector("#searchResults"); if(box) box.innerHTML=searchResultsHTML(); }
+    const nsc=o.querySelector(".searchsheet"); if(nsc) nsc.scrollTop=y;
+    if(had && prevIn){ prevIn.focus(); try{ prevIn.setSelectionRange(sel,sel); }catch(e){} }
+    return; }
   if(phase==="ready" && (daySheet||logSheet)){ const keep=o.querySelector("#lsTask"); const sel=keep?{t:keep.value,d:document.getElementById("lsDay").value,w:document.getElementById("lsWho").value}:null;
     o.innerHTML = daySheet ? daySheetHTML() : logSheetHTML();
     if(sel && logSheet){ document.getElementById("lsTask").value=sel.t; document.getElementById("lsDay").value=sel.d; document.getElementById("lsWho").value=sel.w; }
@@ -2190,7 +2260,8 @@ function removeLatestToday(tid){
   const per=perDay(f.t);
   toast(per>1 ? `${f.t.title}: ${keys.length-1} of ${per} today` : "Unchecked: "+f.t.title);
 }
-function toggle(tid){
+function toggle(tid){ setTimeout(()=>loadSuggestions(true),800); return toggleInner(tid); }
+function toggleInner(tid){
   if(!canWrite) return;
   if(!meId){ showPicker=true; render(); return; }
   const f=findTask(tid); if(!f) return;
@@ -2232,6 +2303,8 @@ document.addEventListener("click",e=>{
   const d=t.closest("[data-done]"); if(d){ toggle(d.dataset.done); return; }
   const rd=t.closest("[data-redeem]"); if(rd){ write("home/rewards","update",{[rd.dataset.redeem]:{by:meId||null}}).then(()=>toast("Marked as given. Enjoy!")); return; }
   const ur=t.closest("[data-unredeem]"); if(ur){ write("home/rewards","update",{[ur.dataset.unredeem]:null}); return; }
+  if(t.closest("[data-search]")){ searchOpen=true; renderOverlay(); return; }
+  if(t.closest("[data-searchclose]") || (t.matches && t.matches("[data-searchbg]"))){ searchOpen=false; document.getElementById("overlay").innerHTML=""; renderOverlay(); return; }
   const dc=t.closest("[data-dcell]"); if(dc){ const [tid,date]=dc.dataset.dcell.split("|"); if(date>todayISO()){ toast(joke()); return; } daySheet={tid,date}; logSheet=null; renderOverlay(); return; }
   const ls=t.closest("[data-logsheet]"); if(ls){ logSheet={ws:ls.dataset.logsheet}; daySheet=null; renderOverlay(); return; }
   if(t.closest("[data-sheetclose]") || (t.matches && t.matches("[data-sheetbg]"))){ daySheet=null; logSheet=null; renderOverlay(); return; }
@@ -2315,15 +2388,17 @@ function addTask(){
 function autosize(el){ el.style.height="auto"; el.style.height=(el.scrollHeight+2)+"px"; }
 document.addEventListener("input",e=>{ if(e.target.classList && e.target.classList.contains("auto")) autosize(e.target); });
 document.addEventListener("change",e=>{ if(e.target.id==="lsDay" && e.target.value>todayISO()) toast(joke()); if(e.target.id && e.target.id.startsWith("logd-") && e.target.value>todayISO()) toast(joke()); });
+document.addEventListener("input",e=>{ if(e.target.id==="searchInput"){ searchQ=e.target.value; const box=document.getElementById("searchResults"); if(box) box.innerHTML=searchResultsHTML(); } });
 document.addEventListener("input",e=>{ if(e.target.id==="mSearch"){ mQuery=e.target.value; applySearch(); } });
 document.addEventListener("toggle",e=>{ const dt=e.target; if(dt.classList && dt.classList.contains("mroom") && !mQuery){ dt.open?openMRooms.add(dt.dataset.mroom):openMRooms.delete(dt.dataset.mroom); } },true);
 document.addEventListener("keydown",e=>{
   if((e.key==="Enter"||e.key===" ") && e.target.classList && e.target.classList.contains("yitem")){ e.preventDefault(); e.target.dispatchEvent(new MouseEvent("click",{bubbles:true})); return; }
+  if(e.key==="Escape" && searchOpen && !daySheet && !logSheet && !howtoOpen){ searchOpen=false; document.getElementById("overlay").innerHTML=""; renderOverlay(); return; }
   if(e.key==="Escape" && (daySheet||logSheet)){ daySheet=null; logSheet=null; renderOverlay(); return; }
   if(e.key==="Escape" && howtoOpen){ howtoOpen=null; renderOverlay(); return; }
   if(e.key==="Enter" && e.target.id==="hvUrl"){ e.preventDefault(); document.getElementById("hvSave").click(); return; }
   if(e.key==="Enter" && e.target.id==="mNewTitle"){ e.preventDefault(); document.getElementById("mAdd").click(); return; }
-  if(e.key==="Enter" && e.target.dataset && (e.target.dataset.ttitle || e.target.dataset.aliases!==undefined)){ e.preventDefault(); e.target.blur(); return; }
+  if(e.key==="Enter" && e.target.dataset && (e.target.dataset.ttitle || e.target.dataset.aliases!==undefined || e.target.dataset.ask!==undefined)){ e.preventDefault(); e.target.blur(); return; }
   if(e.key!=="Enter") return;
   const id=e.target.id;
   if(id==="newTitle"){ e.preventDefault(); addTask(); }
@@ -2342,6 +2417,7 @@ document.addEventListener("change",e=>{
   if(t.id==="rwGrace"){ const v=Math.max(50,Math.min(100,Number(t.value)||90)); write(P.config,"update",{reward:Object.assign({},rewardCfg(),{grace:v})}); return; }
   if(t.id==="rwAvg"){ const v=Math.max(1,Math.min(8,Number(t.value)||3)); write(P.config,"update",{reward:Object.assign({},rewardCfg(),{avgWeeks:v})}); return; }
   if(ds.tcount){ const v=Math.max(1,Math.min(20,Number(t.value)||1)); patchTask(ds.tcount,{count:v}); return; }
+  if(ds.ask!==undefined){ const v=t.value.trim(); patchTask(ds.ask,{ask:v||null}); toast(v?"Check question saved":"Using the default question"); return; }
   if(ds.aliases!==undefined){ const list=t.value.split(",").map(x=>x.trim().toLowerCase()).filter(Boolean); patchTask(ds.aliases,{aliases:list}); toast(list.length?"Siri phrases saved":"Siri phrases cleared"); return; }
   if(ds.ttitle){ const v=t.value.trim(); if(v) patchTask(ds.ttitle,{title:v}); else render(); return; }
   if(ds.troom){ const tid=ds.troom, to=t.value; const tr=findRoom(to); openMRooms.add(to);
