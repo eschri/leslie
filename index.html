@@ -265,6 +265,16 @@ button.roof.sel .chimney{background:var(--door)}
 .dc{height:24px;border-radius:5px;background:var(--surface);border:1px solid var(--line);font-size:.75rem;font-weight:700;display:grid;place-items:center}
 .dc.on{background:var(--ok);border-color:var(--ok);color:#fff}
 .dc.tday{outline:2px solid var(--door);outline-offset:1px}
+button.dc{padding:0;cursor:pointer;color:inherit;font:inherit;font-size:.75rem;font-weight:700}
+button.dc:hover{border-color:var(--ok)}
+button.dc.fut{opacity:.45;border-style:dashed}
+.dhead .dgrid small{font-weight:500;font-size:.68rem}
+.dslist{display:grid;gap:4px;margin-top:8px}
+.dsrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.dsrow .del{color:var(--over)}
+.lsform{display:grid;gap:12px}
+.lsform label{display:grid;gap:4px;font-size:.85rem;font-weight:600}
+.lsform select{width:100%}
 .dtot{font-family:var(--serif);font-size:1.3rem;text-align:right}
 @media(max-width:420px){ .dgrid{grid-template-columns:repeat(7,20px);gap:2px} .dc{height:20px} }
 /* Recap */
@@ -1455,6 +1465,8 @@ function taskRow(r,t,o){
       <label>Owner<select data-owner="${t.id}"><option value="">Nobody, rotate it</option>${members().filter(m=>m.name).map(m=>`<option value="${m.id}" ${t.owner===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>
       ${week && !ownerOf(t)?`<label>This week<select data-asg="${t.id}">${opts}</select></label>`:""}
       <button class="btn soft" data-howto="${t.id}" type="button">${hasHowto(t)?"How-to guide":"Add a how-to video"}</button>
+      <label>Forgot one? Log it on<input type="date" id="logd-${t.id}" value="${iso(addDays(todayISO(),-1))}" max="${todayISO()}"></label>
+      <button class="btn soft" data-logpast="${t.id}" type="button">Log it</button>
       <label>Last done<input type="date" data-last="${t.id}" value="${(L&&L.d)||""}" max="${todayISO()}"></label>
       <label class="cb"><input type="checkbox" data-adult="${t.id}" ${isAdult(r,t)?"checked":""}> Adults only</label>
       ${t.every===1 && t.asNeeded?`<label>About how many times a week<input type="number" min="0" max="50" data-perweek="${t.id}" value="${perWeek(t)}"></label>`:""}
@@ -1564,13 +1576,82 @@ function weekData(ws){
     const p=k.split("~"); out.push({tid:p[0], d:p[1], by:v.by, with:Array.isArray(v.with)?v.with.filter(Boolean):[], min:v.min||0, at:v.at||0}); });
   return out;
 }
-function knownWeeks(){ return [...new Set([curWk].concat(Object.keys(hist)))].sort(); }
+function knownWeeks(){
+  const first=weekStart(cfg && cfg.start ? cfg.start : todayISO()), out=[];
+  for(let i=0;i<12;i++){ const w=shiftWeek(curWk,-i); if(w<first && i>0) break; out.unshift(w); }
+  Object.keys(hist).forEach(w=>{ if(!out.includes(w)) out.push(w); });
+  return out.sort();
+}
+// ---------------- Logging for past days ----------------
+const FUTURE_JOKES=["Trying to get ahead, eh? 🔮","Whoa there, time traveler. That day hasn't happened yet.","Nice try. Future you has to actually do it first.","Bold of you to assume you'll do that tomorrow. 😏","The DeLorean is in the shop. Today or earlier, please.","Oppie can't see the future either. 🐕"];
+const joke=()=>FUTURE_JOKES[Math.floor(Math.random()*FUTURE_JOKES.length)];
+const srcFor = date => { const ws=weekStart(date); return ws===curWk ? wkdone : (hist[ws]||{}); };
+function dayKeysOn(tid,date){ const src=srcFor(date), b=tid+"~"+date; return Object.keys(src).filter(k=>(k===b || k.startsWith(b+"~")) && src[k] && typeof src[k]==="object").sort(); }
+async function reloadWeek(ws){ if(ws===curWk) return; try{ const s=await DB.doc("wkdone/"+wkId(ws)).get(); const d=s.exists?s.data():null; if(d) hist[ws]=clone(d); }catch(e){} render(); }
+function latestLogged(tid, skipKey){
+  let best=null;
+  [wkdone].concat(Object.values(hist)).forEach(src=>Object.entries(src||{}).forEach(([k,v])=>{ if(k===skipKey || !v || typeof v!=="object" || !k.startsWith(tid+"~")) return; const d=k.split("~")[1]; if(!best || d>best.d) best={d,by:v.by}; }));
+  return best;
+}
+async function logOn(tid, date, by, withList){
+  if(!canWrite) return;
+  if(!date){ toast("Pick a day first."); return; }
+  if(date>todayISO()){ toast(joke()); return; }
+  const f=findTask(tid); if(!f) return;
+  if(!by){ showPicker=true; render(); return; }
+  const ws=weekStart(date), src=srcFor(date), base=tid+"~"+date;
+  let key=base, n=1; while(src[key] && typeof src[key]==="object"){ n++; key=base+"~"+n; }
+  const prev=last[tid]||null;
+  await write("wkdone/"+wkId(ws),"update",{[key]:{by, with:(withList||[]).filter(x=>x && x!==by), min:unitMin(f.r,f.t), prev, at:Date.now()}});
+  if(!prev || !prev.d || prev.d<=date) await write(P.last,"update",{[tid]:{d:date,by}});
+  await reloadWeek(ws);
+  toast(`Logged ${f.t.title} for ${date===todayISO()?"today":parse(date).toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})}.`);
+}
+async function unlogKey(key){
+  const p=key.split("~"), tid=p[0], date=p[1], ws=weekStart(date), src=srcFor(date), e=src[key]; if(!e) return;
+  await write("wkdone/"+wkId(ws),"update",{[key]:null});
+  const lt=last[tid];
+  if(lt && lt.d===date){ const other=latestLogged(tid,key); await write(P.last,"update",{[tid]: other ? other : (e.prev||null)}); }
+  await reloadWeek(ws);
+  toast("Removed.");
+}
+let daySheet=null, logSheet=null;
+function daySheetHTML(){
+  const {tid,date}=daySheet, f=findTask(tid); if(!f){ daySheet=null; return ""; }
+  const keys=dayKeysOn(tid,date), src=srcFor(date), named=members().filter(m=>m.name);
+  const dayLabel=parse(date).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+  return `<div class="overlay" data-sheetbg role="dialog" aria-modal="true" aria-labelledby="dsT"><div class="sheet">
+    <div class="where">${esc(f.r.name)}</div><h2 id="dsT">${esc(f.t.title)}</h2><p>${esc(dayLabel)}</p>
+    ${keys.length?`<div class="dslist">${keys.map(k=>{ const v=src[k]; return `<div class="dsrow"><span>✓ ${esc(mName(member(v.by)))}${v.with&&v.with.length?` with ${v.with.map(x=>esc(mName(member(x)))).join(", ")}`:""}</span>${canWrite?`<button class="linky del" data-unlog="${esc(k)}" type="button">Remove</button>`:""}</div>`; }).join("")}</div>`:`<p class="sub">Nothing logged this day yet.</p>`}
+    ${canWrite?`<div class="row" style="margin-top:14px">
+      <label>Who did it<select id="dsWho">${named.map(m=>`<option value="${m.id}" ${m.id===meId?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>
+      ${f.t.together?`<label>Together with<select id="dsWith"><option value="">nobody</option>${named.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select></label>`:""}
+      <button class="btn" id="dsAdd" type="button">+ Log one</button></div>`:""}
+    <p style="margin:16px 0 0;text-align:right"><button class="btn soft" data-sheetclose type="button">Done</button></p>
+  </div></div>`;
+}
+function logSheetHTML(){
+  const ws=logSheet.ws, today=todayISO(), named=members().filter(m=>m.name);
+  const days=[0,1,2,3,4,5,6].map(i=>iso(addDays(ws,i)));
+  const def=logSheet.date || (days.includes(today)?today:days[6]);
+  return `<div class="overlay" data-sheetbg role="dialog" aria-modal="true" aria-labelledby="lsT"><div class="sheet">
+    <h2 id="lsT">Log a task</h2><p>Forgot to check something off? Add it to the right day.</p>
+    <div class="lsform">
+      <label>Task<select id="lsTask">${cfg.rooms.map(r=>r.tasks.length?`<optgroup label="${esc(r.name)}">${r.tasks.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join("")}</optgroup>`:"").join("")}</select></label>
+      <label>Day<select id="lsDay">${days.map(d=>`<option value="${d}" ${d===def?"selected":""}>${esc(parse(d).toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"}))}${d>today?" (not yet)":d===today?" (today)":""}</option>`).join("")}</select></label>
+      <label>Who did it<select id="lsWho">${named.map(m=>`<option value="${m.id}" ${m.id===meId?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>
+    </div>
+    <div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn soft" data-sheetclose type="button">Cancel</button><button class="btn" id="lsAdd" type="button">Log it</button></div>
+  </div></div>`;
+}
 function viewDone(){
-  const ws=doneWk||curWk, weeks=knownWeeks(), i=weeks.indexOf(ws);
+  const ws=doneWk||curWk, weeks=knownWeeks(), i=weeks.indexOf(ws), today=todayISO();
   const E=weekData(ws).filter(e=>!doneWho || e.by===doneWho || e.with.includes(doneWho));
   const credit=creditsIn(ws===curWk?wkdone:hist[ws]);
   const mins = doneWho ? (credit[doneWho]||0) : E.reduce((n,e)=>n+e.min,0);
-  let h=`<div class="roomHead"><div><h2>Done</h2><div class="sub">Everything checked off, by day.</div></div></div>
+  const days=[0,1,2,3,4,5,6].map(k=>iso(addDays(ws,k)));
+  let h=`<div class="roomHead"><div><h2>Done</h2><div class="sub">Everything checked off, by day. Tap any square to add or fix that day.</div></div>
+      ${canWrite?`<button class="btn sm" data-logsheet="${ws}" type="button">+ Log a task</button>`:""}</div>
     <div class="wknav">
       <button class="btn soft sm" data-dwk="${i>0?weeks[i-1]:""}" ${i>0?"":"disabled"} type="button" aria-label="Previous week">‹</button>
       <strong>${ws===curWk?"This week":"Week of "+fmt(ws)}</strong>
@@ -1578,18 +1659,17 @@ function viewDone(){
     </div>
     <div class="chips"><button class="fchip ${doneWho?"":"on"}" data-dwho="" type="button">Everyone</button>${members().filter(m=>m.name).map(m=>`<button class="fchip ${doneWho===m.id?"on":""}" data-dwho="${m.id}" type="button">${esc(m.name)}</button>`).join("")}</div>
     <p class="dsum"><strong>${E.length}</strong> check-off${E.length===1?"":"s"}, <strong>${hrs(mins)}</strong> of work${doneWho?` credited to ${esc(mName(member(doneWho)))}`:""}.</p>`;
-  if(!E.length) return h+`<p class="empty">Nothing checked off ${ws===curWk?"yet this week":"that week"}.</p>`;
+  if(!E.length) return h+`<p class="empty">Nothing checked off ${ws===curWk?"yet this week":"that week"}. Use <strong>+ Log a task</strong> to add something you forgot.</p>`;
   const g={};
   E.forEach(e=>{ const x=g[e.tid]=g[e.tid]||{tid:e.tid,n:0,days:[0,0,0,0,0,0,0],who:{}};
     x.n++; const di=Math.round((parse(e.d)-parse(ws))/86400000); if(di>=0&&di<7) x.days[di]++;
     [e.by].concat(e.with).forEach(p=>{ x.who[p]=(x.who[p]||0)+1; }); });
   const rows=Object.values(g).sort((a,b)=>b.n-a.n);
-  const todayIdx=ws===curWk?Math.round((parse(todayISO())-parse(ws))/86400000):-1;
-  h+=`<div class="dhead"><span></span><span class="dgrid">${DAYS.map((d,k)=>`<span class="${k===todayIdx?"tday":""}">${d}</span>`).join("")}</span><span></span></div>`;
+  h+=`<div class="dhead"><span></span><span class="dgrid">${DAYS.map((d,k)=>`<span class="${days[k]===today?"tday":""}" title="${esc(parse(days[k]).toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"}))}">${d}<br><small>${parse(days[k]).getDate()}</small></span>`).join("")}</span><span></span></div>`;
   h+=rows.map(x=>{ const f=findTask(x.tid);
     return `<div class="drow"><div class="dname"><strong>${esc(f?f.t.title:"Removed task")}</strong>${f?`<span class="where">${esc(f.r.name)}</span>`:""}
         <span class="dwho">${Object.entries(x.who).map(([p,c])=>member(p)?`${chip(member(p))}${c>1?`<span class="x">×${c}</span>`:""}`:"").join(" ")}</span></div>
-      <span class="dgrid">${x.days.map((c,k)=>`<span class="dc ${c?"on":""} ${k===todayIdx?"tday":""}" title="${c} on ${["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][k]}">${c||""}</span>`).join("")}</span>
+      <span class="dgrid">${x.days.map((c,k)=>`<button class="dc ${c?"on":""} ${days[k]===today?"tday":""} ${days[k]>today?"fut":""}" ${f?`data-dcell="${x.tid}|${days[k]}"`:"disabled"} type="button" aria-label="${c} on ${esc(parse(days[k]).toLocaleDateString(undefined,{weekday:"long"}))}">${c||""}</button>`).join("")}</span>
       <span class="dtot">${x.n}</span></div>`; }).join("");
   return h;
 }
@@ -2050,6 +2130,10 @@ function viewSettings(){
 
 function renderOverlay(){
   const o=document.getElementById("overlay");
+  if(phase==="ready" && (daySheet||logSheet)){ const keep=o.querySelector("#lsTask"); const sel=keep?{t:keep.value,d:document.getElementById("lsDay").value,w:document.getElementById("lsWho").value}:null;
+    o.innerHTML = daySheet ? daySheetHTML() : logSheetHTML();
+    if(sel && logSheet){ document.getElementById("lsTask").value=sel.t; document.getElementById("lsDay").value=sel.d; document.getElementById("lsWho").value=sel.w; }
+    if(daySheet||logSheet) return; }
   if(phase==="ready" && howtoOpen){ const old=o.querySelector(".sheet.howto"); const y=old?old.scrollTop:0; o.innerHTML=howtoSheet(); const nw=o.querySelector(".sheet.howto"); if(nw) nw.scrollTop=y; if(howtoOpen) return; }
   if(phase!=="ready" || !canWrite){ o.innerHTML=""; return; }
   const me=member(meId);
@@ -2148,6 +2232,14 @@ document.addEventListener("click",e=>{
   const d=t.closest("[data-done]"); if(d){ toggle(d.dataset.done); return; }
   const rd=t.closest("[data-redeem]"); if(rd){ write("home/rewards","update",{[rd.dataset.redeem]:{by:meId||null}}).then(()=>toast("Marked as given. Enjoy!")); return; }
   const ur=t.closest("[data-unredeem]"); if(ur){ write("home/rewards","update",{[ur.dataset.unredeem]:null}); return; }
+  const dc=t.closest("[data-dcell]"); if(dc){ const [tid,date]=dc.dataset.dcell.split("|"); if(date>todayISO()){ toast(joke()); return; } daySheet={tid,date}; logSheet=null; renderOverlay(); return; }
+  const ls=t.closest("[data-logsheet]"); if(ls){ logSheet={ws:ls.dataset.logsheet}; daySheet=null; renderOverlay(); return; }
+  if(t.closest("[data-sheetclose]") || (t.matches && t.matches("[data-sheetbg]"))){ daySheet=null; logSheet=null; renderOverlay(); return; }
+  if(t.id==="dsAdd"){ const w=document.getElementById("dsWith"); logOn(daySheet.tid, daySheet.date, document.getElementById("dsWho").value, w&&w.value?[w.value]:[]).then(()=>renderOverlay()); return; }
+  const ul=t.closest("[data-unlog]"); if(ul){ unlogKey(ul.dataset.unlog).then(()=>renderOverlay()); return; }
+  if(t.id==="lsAdd"){ const tid=document.getElementById("lsTask").value, date=document.getElementById("lsDay").value, who=document.getElementById("lsWho").value;
+    if(date>todayISO()){ toast(joke()); return; } logOn(tid,date,who,[]).then(()=>{ logSheet=null; renderOverlay(); }); return; }
+  const lp=t.closest("[data-logpast]"); if(lp){ const inp=document.getElementById("logd-"+lp.dataset.logpast); logOn(lp.dataset.logpast, inp?inp.value:"", meId, []); return; }
   const rc=t.closest("[data-recap]"); if(rc){ openRecap(rc.dataset.recap); return; }
   const dw=t.closest("[data-dwk]"); if(dw){ if(dw.dataset.dwk){ doneWk=dw.dataset.dwk; render(); } return; }
   const dh=t.closest("[data-dwho]"); if(dh){ doneWho=dh.dataset.dwho; render(); return; }
@@ -2222,10 +2314,12 @@ function addTask(){
 }
 function autosize(el){ el.style.height="auto"; el.style.height=(el.scrollHeight+2)+"px"; }
 document.addEventListener("input",e=>{ if(e.target.classList && e.target.classList.contains("auto")) autosize(e.target); });
+document.addEventListener("change",e=>{ if(e.target.id==="lsDay" && e.target.value>todayISO()) toast(joke()); if(e.target.id && e.target.id.startsWith("logd-") && e.target.value>todayISO()) toast(joke()); });
 document.addEventListener("input",e=>{ if(e.target.id==="mSearch"){ mQuery=e.target.value; applySearch(); } });
 document.addEventListener("toggle",e=>{ const dt=e.target; if(dt.classList && dt.classList.contains("mroom") && !mQuery){ dt.open?openMRooms.add(dt.dataset.mroom):openMRooms.delete(dt.dataset.mroom); } },true);
 document.addEventListener("keydown",e=>{
   if((e.key==="Enter"||e.key===" ") && e.target.classList && e.target.classList.contains("yitem")){ e.preventDefault(); e.target.dispatchEvent(new MouseEvent("click",{bubbles:true})); return; }
+  if(e.key==="Escape" && (daySheet||logSheet)){ daySheet=null; logSheet=null; renderOverlay(); return; }
   if(e.key==="Escape" && howtoOpen){ howtoOpen=null; renderOverlay(); return; }
   if(e.key==="Enter" && e.target.id==="hvUrl"){ e.preventDefault(); document.getElementById("hvSave").click(); return; }
   if(e.key==="Enter" && e.target.id==="mNewTitle"){ e.preventDefault(); document.getElementById("mAdd").click(); return; }
