@@ -212,6 +212,40 @@ textarea.mtitle{font-weight:600}
 .tr .sub{color:var(--muted)!important}
 .math{margin:4px 0 0;padding-left:1.2rem;font-size:.92rem}
 .pastwk{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:4px}
+/* House scene */
+.estate{display:grid;grid-template-columns:clamp(62px,17%,140px) 1fr;grid-template-areas:". roof" ". upper" "garage main" "ground ground" ". base";max-width:900px;margin:0 auto}
+.estate>.roof{grid-area:roof}
+.estate>.ground{grid-area:ground}
+.gslot{grid-area:garage;display:flex;align-items:stretch;justify-content:flex-end}
+button.roof{display:block;width:calc(100% + 28px);border:0;padding:0;cursor:pointer;position:relative;color:#fff}
+button.roof:hover{filter:brightness(1.15)}
+button.roof.sel{background:var(--door);color:#1D2B3A}
+button.roof.sel .chimney{background:var(--door)}
+.rlabel{position:absolute;left:0;right:0;bottom:6px;display:flex;justify-content:center;align-items:center;gap:8px;font-weight:700;font-size:.85rem}
+.rlabel .pill{position:static}
+.garage{display:flex;flex-direction:column;width:100%;border:0;padding:0;background:none;cursor:pointer;text-align:left}
+.groof{height:18px;background:var(--roof);clip-path:polygon(0 100%,100% 0,100% 100%);margin-left:-6px}
+.gbody{flex:1;position:relative;display:flex;flex-direction:column;gap:4px;background:var(--surface);border:3px solid var(--roof);border-right:0;padding:8px 8px 0}
+.garage:hover .gbody{background:color-mix(in srgb,var(--door) 16%,var(--surface))}
+.garage.sel .gbody{background:var(--door);color:#1D2B3A}
+.gname{font-weight:600;font-size:.88rem}
+.garage .pill{position:static;align-self:flex-start}
+.gdoor{margin-top:auto;height:46%;min-height:34px;border:2px solid var(--roof);border-bottom:0;background:repeating-linear-gradient(180deg,var(--below) 0 7px,var(--line) 7px 9px);margin-inline:4px}
+.yardsvg{display:block;width:100%;max-width:900px;height:auto;margin:6px auto 0}
+.yitem{cursor:pointer;outline:none}
+.yitem>:not(.ybadge):not(.hit){transition:transform .15s}
+.yitem:hover>:not(.ybadge):not(.hit){transform:translateY(-3px)}
+.ylab{fill:transparent}
+.ylbl{font:700 12px var(--sans);fill:#fff}
+.yitem.sel .ylab{fill:var(--door)}
+.yitem.sel .ylbl{fill:#1D2B3A}
+.yitem:focus-visible .ylab{stroke:var(--door);stroke-width:3}
+.ybadge rect{stroke:#fff;stroke-width:1.5}
+.ybadge.over rect{fill:var(--over)}
+.ybadge.due rect{fill:var(--soon)}
+.ybadge text{font:700 11px var(--sans);fill:#fff}
+@media(max-width:520px){ .cells{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))} .cell{min-height:66px;padding:8px 8px 26px} .estate{grid-template-columns:58px 1fr} .gname{font-size:.75rem} .gbody{padding:6px 5px 0} }
+@media (prefers-reduced-motion: reduce){ .yitem:hover>*{transform:none} }
 /* Done tab */
 .wknav{display:flex;align-items:center;gap:14px;margin:16px 0 10px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
@@ -529,19 +563,21 @@ const T = {
     ["Replace CO alarms",1825,"CO alarms wear out after 5 to 7 years. The date is printed on the back."],
     ["Replace smoke alarms",3650,"Smoke alarms expire after 10 years. Check the date on the back."]
   ],
-  outside:[
+  garage:[
     ["Test the garage door auto-reverse",30,"Lay a 2x4 flat under the door and close it; it should reverse on contact. Also wave something through the sensor beam."],
     ["Sweep the garage",90,""],
+    ["Lubricate the garage door",182,"Use garage door lubricant on rollers and hinges. Leave springs to a pro; they're under dangerous tension."],
+    ["Service the mower and snow blower",365,"Oil, spark plug and blade. Mower in spring, snow blower in fall."]
+  ],
+  outside:[
     ["Clean gutters and downspouts",182,"Late spring and late fall, after the leaves drop. Downspouts should empty at least 5 feet from the foundation."],
     ["Look over the roof",182,"From the ground with binoculars: missing or curled shingles and damaged flashing. Also check after big storms."],
-    ["Lubricate the garage door",182,"Use garage door lubricant on rollers and hinges. Leave springs to a pro; they're under dangerous tension."],
     ["Shut off and drain outdoor faucets",365,"Before the first freeze: close the indoor shutoff valve, open the outside faucet to drain it, and disconnect hoses."],
     ["Check caulk around windows and doors",365,"Recaulk cracks to keep out water and drafts."],
     ["Check grading around the foundation",365,"Soil should slope away from the house so water drains off, not toward the basement."],
     ["Wash exterior windows",365,""],
     ["Wash siding, deck and walkways",365,"A gentle pressure-washer setting or a hose and brush. Go easy on wood and older paint."],
-    ["Trim plants away from the house",365,"Keep branches off the roof and shrubs at least a foot from the siding."],
-    ["Service the mower and snow blower",365,"Oil, spark plug and blade. Mower in spring, snow blower in fall."]
+    ["Trim plants away from the house",365,"Keep branches off the roof and shrubs at least a foot from the siding."]
   ],
   movein:[
     ["Change or rekey exterior locks",0,"You don't know how many keys the previous owners gave out."],
@@ -573,13 +609,13 @@ T.pet = [
   {title:"Give flea, tick and heartworm meds",every:30,min:5,adult:true,tip:"Follow your vet's schedule for which products and how often. Delete this if it doesn't apply."},
   {title:"Vet checkup and vaccines",every:365,min:90,adult:true,tip:"Book the annual visit."}
 ];
-const TYPE_NAMES = {bedroom:"Bedroom",fullbath:"Full bathroom",halfbath:"Half bathroom",kitchen:"Kitchen",living:"Living room",family:"Family room",dining:"Dining room",office:"Office",entry:"Entry or foyer",stairs:"Stairs and hallways",halls:"Entry, stairs and halls",laundry:"Laundry room",basement:"Basement",systems:"Whole house and systems",outside:"Garage and outside",movein:"Move-in checklist",meals:"Meals",fun:"Family time",pet:"Pet care",blank:"Empty room"};
+const TYPE_NAMES = {bedroom:"Bedroom",fullbath:"Full bathroom",halfbath:"Half bathroom",kitchen:"Kitchen",living:"Living room",family:"Family room",dining:"Dining room",office:"Office",entry:"Entry or foyer",stairs:"Stairs and hallways",halls:"Entry, stairs and halls",laundry:"Laundry room",basement:"Basement",systems:"Whole house and systems",outside:"Outside",garage:"Garage",movein:"Move-in checklist",meals:"Meals",fun:"Family time",pet:"Pet care",blank:"Empty room"};
 const DEFAULT_ROOMS = [
   ["Bedrooms","bedroom","upper"],["Full bathrooms","fullbath","upper"],
   ["Living spaces","family","main"],["Kitchen","kitchen","main"],["Powder room","halfbath","main"],
   ["Stairs and halls","halls","main"],["Laundry room","laundry","main"],
   ["Basement","basement","basement"],
-  ["Whole house","systems","other"],["Garage and outside","outside","other"],["Move-in checklist","movein","other"],
+  ["Whole house","systems","other"],["Garage","garage","other"],["Outside","outside","other"],["Move-in checklist","movein","other"],
   ["Meals","meals","other"],["Oppie","pet","other"]
 ];
 
@@ -1641,11 +1677,105 @@ function cellHTML(room){
   const pill=c.over?`<span class="pill over">${c.over} overdue</span>`:c.today?`<span class="pill due">${c.today} due</span>`:`<span class="pill clear">All caught up</span>`;
   return `<button class="cell ${room.id===selRoom?"sel":""}" data-room="${room.id}"><span class="cname">${esc(room.name)}</span>${pill}</button>`;
 }
+
+// ---------------- House scene ----------------
+const YARD_ART={
+  outside:`<rect x="56" y="104" width="14" height="66" rx="3" fill="#7A5534"/>
+ <circle cx="63" cy="84" r="34" fill="#4E8A55"/><circle cx="38" cy="98" r="22" fill="#5E9C63"/><circle cx="90" cy="96" r="24" fill="#5E9C63"/><circle cx="64" cy="58" r="22" fill="#6AA86E"/>
+ <circle cx="50" cy="76" r="4" fill="#E3A72F"/><circle cx="80" cy="70" r="4" fill="#B23A48"/><circle cx="70" cy="100" r="4" fill="#E3A72F"/>
+ <ellipse cx="118" cy="164" rx="26" ry="10" fill="#4E7A52"/>
+ <circle cx="104" cy="156" r="5" fill="#E88AA6"/><circle cx="116" cy="152" r="5" fill="#F3D35B"/><circle cx="128" cy="156" r="5" fill="#E88AA6"/><circle cx="122" cy="161" r="4" fill="#fff"/>`,
+  movein:`<rect x="160" y="130" width="64" height="40" rx="3" fill="#C9965E" stroke="#8C6237" stroke-width="2"/>
+ <rect x="188" y="130" width="8" height="40" fill="#E8D3A8"/>
+ <rect x="170" y="100" width="46" height="32" rx="3" fill="#D8A86E" stroke="#8C6237" stroke-width="2"/>
+ <rect x="189" y="100" width="8" height="32" fill="#E8D3A8"/>
+ <text x="176" y="160" font="700 9px sans-serif" font-size="9" font-weight="700" fill="#5A3C1E">FRAGILE</text>`,
+  fun:`<!-- person 1 -->
+ <path d="M282 168 l4 -34 M296 168 l-2 -34" stroke="#1D2B3A" stroke-width="6" stroke-linecap="round"/>
+ <path d="M282 96 h14 q4 0 5 6 l8 38 h-40 l8 -38 q1 -6 5 -6z" fill="#2F6F8F"/>
+ <circle cx="289" cy="84" r="12" fill="#F2C9A0"/>
+ <path d="M276 84 q2 -20 14 -18 q14 -2 13 18 q-4 -10 -13 -10 q-8 0 -14 10z" fill="#7A4B2A"/>
+ <path d="M278 86 q-6 14 -2 22 M301 86 q6 14 2 22" stroke="#7A4B2A" stroke-width="6" stroke-linecap="round" fill="none"/>
+ <!-- person 2 -->
+ <path d="M334 168 l3 -38 M349 168 l-2 -38" stroke="#1D2B3A" stroke-width="6" stroke-linecap="round"/>
+ <rect x="326" y="94" width="30" height="42" rx="12" fill="#B5562F"/>
+ <circle cx="341" cy="80" r="12" fill="#F2C9A0"/>
+ <path d="M329 78 q2 -14 12 -14 q11 0 12 14 q-6 -6 -12 -6 q-7 0 -12 6z" fill="#3A2A1E"/>
+ <!-- holding hands -->
+ <path d="M302 112 q10 14 22 0" stroke="#F2C9A0" stroke-width="6" stroke-linecap="round" fill="none"/>
+ <!-- leash hand -->
+ <path d="M355 106 q14 10 22 20" stroke="#F2C9A0" stroke-width="6" stroke-linecap="round" fill="none"/>
+ <circle cx="318" cy="66" r="0"/>
+ <path d="M312 60 c-4 -6 -12 -2 -8 4 l8 8 l8 -8 c4 -6 -4 -10 -8 -4z" fill="#E8607A"/>`,
+  pet:`<!-- legs -->
+ <g fill="#D9A066"><rect x="410" y="146" width="12" height="24" rx="6"/><rect x="424" y="148" width="12" height="22" rx="6"/><rect x="452" y="146" width="12" height="24" rx="6"/><rect x="466" y="148" width="12" height="22" rx="6"/></g>
+ <!-- fluffy body -->
+ <g fill="#E8B57E"><ellipse cx="444" cy="138" rx="38" ry="20"/>
+  <circle cx="412" cy="130" r="11"/><circle cx="426" cy="122" r="11"/><circle cx="442" cy="120" r="11"/><circle cx="458" cy="122" r="11"/><circle cx="472" cy="130" r="11"/>
+  <circle cx="414" cy="146" r="10"/><circle cx="474" cy="146" r="10"/></g>
+ <!-- tail -->
+ <circle cx="404" cy="118" r="9" fill="#E8B57E"/><circle cx="398" cy="108" r="7" fill="#E8B57E"/>
+ <path d="M377 126 Q428 92 474 127" stroke="#B23A48" stroke-width="2.5" fill="none"/>
+ <!-- head -->
+ <g>
+  <circle cx="484" cy="110" r="18" fill="#EDC08C"/>
+  <circle cx="474" cy="94" r="8" fill="#EDC08C"/><circle cx="486" cy="90" r="9" fill="#EDC08C"/><circle cx="497" cy="96" r="8" fill="#EDC08C"/>
+  <ellipse cx="468" cy="114" rx="7" ry="13" fill="#D29A5E"/>
+  <ellipse cx="500" cy="114" rx="7" ry="13" fill="#D29A5E"/>
+  <ellipse cx="486" cy="120" rx="10" ry="8" fill="#F3D2A6"/>
+  <ellipse cx="486" cy="116" rx="4" ry="3" fill="#2B1D14"/>
+  <circle cx="478" cy="106" r="2.4" fill="#2B1D14"/><circle cx="494" cy="106" r="2.4" fill="#2B1D14"/>
+  <path d="M484 124 q2 8 5 0" fill="#E8607A"/>
+  <path d="M470 128 q16 6 32 0" stroke="#2F6F8F" stroke-width="4" fill="none" stroke-linecap="round"/>
+ </g>`,
+  meals:`<path d="M560 70 q-6 -8 0 -16 q6 -8 0 -16 M574 74 q-6 -8 0 -16 q6 -8 0 -16 M588 70 q-6 -8 0 -16 q6 -8 0 -16" stroke="#9AA8B5" stroke-width="3" fill="none" stroke-linecap="round"/>
+ <path d="M546 104 a28 22 0 0 1 56 0z" fill="#2B3A48"/>
+ <rect x="571" y="80" width="6" height="6" rx="2" fill="#2B3A48"/>
+ <rect x="542" y="104" width="64" height="5" rx="2" fill="#9AA8B5"/>
+ <path d="M548 109 a26 26 0 0 0 52 0z" fill="#1D2B3A"/>
+ <path d="M562 132 l-10 36 M586 132 l10 36 M574 134 v34" stroke="#1D2B3A" stroke-width="4" stroke-linecap="round"/>
+ <circle cx="552" cy="168" r="4" fill="#1D2B3A"/><circle cx="596" cy="168" r="4" fill="#1D2B3A"/>`
+};
+
+const YARD_SPOTS={outside:{x:78,b:[78,26]}, movein:{x:192,b:[192,90]}, fun:{x:316,b:[316,40]}, pet:{x:446,b:[488,70]}, meals:{x:574,b:[574,22]}};
+function badgeSVG(room,x,y){
+  const c=roomCounts(room); if(!c.over && !c.today) return "";
+  const txt=c.over?`${c.over} overdue`:`${c.today} due`, w=txt.length*6.6+14;
+  return `<g class="ybadge ${c.over?"over":"due"}"><rect x="${x-w/2}" y="${y-10}" width="${w}" height="20" rx="10"/><text x="${x}" y="${y+4}" text-anchor="middle">${txt}</text></g>`;
+}
+function yardSVG(){
+  const other=cfg.rooms.filter(r=>r.floor==="other");
+  const items=Object.keys(YARD_ART).map(type=>({type, room:other.find(r=>r.type===type)})).filter(x=>x.room);
+  if(!items.length) return "";
+  const g=items.map(({type,room})=>{ const sp=YARD_SPOTS[type], sel=room.id===selRoom, lw=Math.min(18,room.name.length)*7+18;
+    return `<g class="yitem ${sel?"sel":""}" data-room="${room.id}" role="button" tabindex="0" aria-label="${esc(room.name)}">
+      <rect class="hit" x="${sp.x-62}" y="10" width="124" height="196" fill="transparent"/>
+      ${YARD_ART[type]}
+      <rect class="ylab" x="${sp.x-lw/2}" y="177" width="${lw}" height="24" rx="12"/>
+      <text class="ylbl" x="${sp.x}" y="194" text-anchor="middle">${esc(room.name.length>18?room.name.slice(0,17)+"…":room.name)}</text>
+      ${badgeSVG(room,sp.b[0],sp.b[1])}</g>`; }).join("");
+  return `<svg class="yardsvg" viewBox="0 0 640 210" role="group" aria-label="Outside the house">
+    <rect x="0" y="168" width="640" height="42" rx="8" fill="var(--grass)"/>${g}</svg>`;
+}
+function pillHTML(room){ const c=roomCounts(room); return c.over?`<span class="pill over">${c.over} overdue</span>`:c.today?`<span class="pill due">${c.today} due</span>`:`<span class="pill clear">All caught up</span>`; }
+function sceneHTML(){
+  const by=f=>cfg.rooms.filter(r=>r.floor===f);
+  const other=by("other");
+  const sys=other.find(r=>r.type==="systems"), gar=other.find(r=>r.type==="garage");
+  const mapped=new Set(["systems","garage"].concat(Object.keys(YARD_ART)));
+  const loose=other.filter(r=>!mapped.has(r.type) || (r.type!=="systems" && r.type!=="garage" && other.filter(x=>x.type===r.type)[0]!==r) || (r.type==="systems" && r!==sys) || (r.type==="garage" && r!==gar));
+  const floorHTML=(f,label,cls)=>{ const rs=by(f); return `<div class="floor ${cls||""}" style="grid-area:${f==="upper"?"upper":f==="main"?"main":"base"}"><div class="flabel">${label}</div><div class="cells">${rs.length?rs.map(cellHTML).join(""):`<div class="cell" style="color:var(--muted);font-size:.85rem">No rooms</div>`}</div></div>`; };
+  const roof = sys ? `<button class="roof ${sys.id===selRoom?"sel":""}" data-room="${sys.id}" aria-label="${esc(sys.name)}"><div class="chimney"></div><span class="rlabel">${esc(sys.name)} ${pillHTML(sys)}</span></button>`
+                   : `<div class="roof"><div class="chimney"></div></div>`;
+  const garage = gar ? `<button class="garage ${gar.id===selRoom?"sel":""}" data-room="${gar.id}" aria-label="${esc(gar.name)}"><span class="groof"></span><span class="gbody"><span class="gname">${esc(gar.name)}</span>${pillHTML(gar)}<span class="gdoor"></span></span></button>` : `<div></div>`;
+  return `<div class="houseWrap"><div class="estate">
+      ${roof}${floorHTML("upper","Upstairs")}<div class="gslot">${garage}</div>${floorHTML("main","Main floor")}<div class="ground"></div>${floorHTML("basement","Basement","below")}
+    </div>${yardSVG()}${loose.length?`<div class="yard">${loose.map(cellHTML).join("")}</div>`:""}</div>`;
+}
 function viewRooms(){
   const by=f=>cfg.rooms.filter(r=>r.floor===f);
   const floorHTML=(f,label,cls)=>{ const rs=by(f); return `<div class="floor ${cls||""}"><div class="flabel">${label}</div><div class="cells">${rs.length?rs.map(cellHTML).join(""):`<div class="cell" style="color:var(--muted);font-size:.85rem">No rooms</div>`}</div></div>`; };
-  let h=`<div class="houseWrap"><div class="house"><div class="roof"><div class="chimney"></div></div>${floorHTML("upper","Upstairs")}${floorHTML("main","Main floor")}<div class="ground"></div>${floorHTML("basement","Basement","below")}</div>
-    <div class="yard">${by("other").map(cellHTML).join("")}</div></div>`;
+  let h=sceneHTML();
   const room=findRoom(selRoom);
   if(!room) return h+`<p class="empty">Select a room.</p>`;
   const floorName=(FLOORS.find(f=>f[0]===room.floor)||[,""])[1];
@@ -2095,6 +2225,7 @@ document.addEventListener("input",e=>{ if(e.target.classList && e.target.classLi
 document.addEventListener("input",e=>{ if(e.target.id==="mSearch"){ mQuery=e.target.value; applySearch(); } });
 document.addEventListener("toggle",e=>{ const dt=e.target; if(dt.classList && dt.classList.contains("mroom") && !mQuery){ dt.open?openMRooms.add(dt.dataset.mroom):openMRooms.delete(dt.dataset.mroom); } },true);
 document.addEventListener("keydown",e=>{
+  if((e.key==="Enter"||e.key===" ") && e.target.classList && e.target.classList.contains("yitem")){ e.preventDefault(); e.target.dispatchEvent(new MouseEvent("click",{bubbles:true})); return; }
   if(e.key==="Escape" && howtoOpen){ howtoOpen=null; renderOverlay(); return; }
   if(e.key==="Enter" && e.target.id==="hvUrl"){ e.preventDefault(); document.getElementById("hvSave").click(); return; }
   if(e.key==="Enter" && e.target.id==="mNewTitle"){ e.preventDefault(); document.getElementById("mAdd").click(); return; }
