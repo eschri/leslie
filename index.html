@@ -683,6 +683,7 @@ function taskMin(t){ if(typeof t.min==="number" && t.min>0) return t.min; for(co
 const taskCount = (r,t) => t.count!=null ? Math.max(1,Number(t.count)||1) : (r.count||1);
 const unitMin = (r,t) => taskMin(t)*taskCount(r,t);
 const perDay = t => t.every===1 ? Math.max(1,t.perDay||1) : 1;
+const perWeekText = t => { const v=perWeek(t); if(v>0 && v<1){ const w=Math.round(1/v); return w<=1?"about once a week":`about every ${w} weeks`; } return `about ${Math.round(v*10)/10} a week`; };
 const perWeek = t => Math.max(0, Math.min(50, t.perWeek==null ? 5 : Number(t.perWeek)));
 const isNeed = t => t.every===1 && !!t.asNeeded;
 // Frequency picker with an "As it comes up" choice (stored as daily + asNeeded)
@@ -1483,7 +1484,7 @@ function taskRow(r,t,o){
       <button class="btn soft" data-logpast="${t.id}" type="button">Log it</button>
       <label>Last done<input type="date" data-last="${t.id}" value="${(L&&L.d)||""}" max="${todayISO()}"></label>
       <label class="cb"><input type="checkbox" data-adult="${t.id}" ${isAdult(r,t)?"checked":""}> Adults only</label>
-      ${t.every===1 && t.asNeeded?`<label>About how many times a week<input type="number" min="0" max="50" data-perweek="${t.id}" value="${perWeek(t)}"></label>`:""}
+      ${t.every===1 && t.asNeeded?`<label>About how many times a week <span class="hint">0.5 = every 2 weeks</span><input type="number" min="0" max="50" step="any" inputmode="decimal" data-perweek="${t.id}" value="${perWeek(t)}"></label>`:""}
       <label class="cb"><input type="checkbox" data-together="${t.id}" ${t.together?"checked":""}> Can be done together</label>
       <button class="btn danger" data-del="${t.id}" type="button">Delete task</button>
       <button class="linky" data-close type="button">Close</button>
@@ -1495,7 +1496,7 @@ function taskRow(r,t,o){
       <button class="ttl" data-open="${t.id}" aria-expanded="${openEdit===t.id}">${esc(t.title)}</button>
       ${t.tip && !o.noTip?`<div class="tip">${esc(t.tip)}</div>`:""}
       <div class="meta">${o.noChip?"":(a?chip(member(a))+(ownerOf(t)?"<span>owns this</span>":""):(week && t.id in (week.assign||{}) || o.showGrab)?`<span>Up for grabs</span>`:"")}
-        ${t.every===1 && o.dots?dotsHTML(t):""}<span>${lastTxt}</span>${(t.every===1 && perDay(t)>1 && !t.asNeeded)?`<span>${taskStats(t.id).thisWeek} this week</span>`:""}${(t.every===1 && (perDay(t)>1 || t.asNeeded) && canWrite && dayKeys(t.id,todayISO()).length)?`<button class="linky undo1" data-undo1="${t.id}" type="button">Undo one</button>`:""}${hasHowto(t)?`<button class="linky howlink" data-howto="${t.id}" type="button">How to</button>`:""}<span>~${hrs(unitMin(r,t))}${t.every===1?(t.asNeeded?` each time, about ${perWeek(t)} a week`:perDay(t)>1?" each time":" a day"):""}</span>${withSel}</div>
+        ${t.every===1 && o.dots?dotsHTML(t):""}<span>${lastTxt}</span>${(t.every===1 && perDay(t)>1 && !t.asNeeded)?`<span>${taskStats(t.id).thisWeek} this week</span>`:""}${(t.every===1 && (perDay(t)>1 || t.asNeeded) && canWrite && dayKeys(t.id,todayISO()).length)?`<button class="linky undo1" data-undo1="${t.id}" type="button">Undo one</button>`:""}${hasHowto(t)?`<button class="linky howlink" data-howto="${t.id}" type="button">How to</button>`:""}<span>~${hrs(unitMin(r,t))}${t.every===1?(t.asNeeded?` each time, ${perWeekText(t)}`:perDay(t)>1?" each time":" a day"):""}</span>${withSel}</div>
     </div>
     <div class="stat"><b>${label}</b></div>
     ${edit}
@@ -2137,7 +2138,7 @@ function managerHTML(){
         ${r.count>1?`<label>How many rooms <span class="hint">of ${r.count}</span><input type="number" min="1" max="20" data-tcount="${t.id}" value="${taskCount(r,t)}" ${dis}></label>`:""}
         ${taskCount(r,t)>1?`<span class="hint mtotal">= ${hrs(unitMin(r,t))} each time</span>`:""}
         ${daily && !t.asNeeded?`<label>Times a day<input type="number" min="1" max="10" data-per="${t.id}" value="${perDay(t)}" ${dis}></label>`:""}
-        ${daily && t.asNeeded?`<label>About how many a week<input type="number" min="0" max="50" data-perweek="${t.id}" value="${perWeek(t)}" ${dis}></label>`:""}
+        ${daily && t.asNeeded?`<label>About how many a week <span class="hint">0.5 = every 2 weeks, 0.25 = monthly</span><input type="number" min="0" max="50" step="any" inputmode="decimal" data-perweek="${t.id}" value="${perWeek(t)}" ${dis}></label>`:""}
         <label class="cb"><input type="checkbox" data-together="${t.id}" ${t.together?"checked":""} ${dis}> Can be done together</label>
         <label class="cb"><input type="checkbox" data-adult="${t.id}" ${isAdult(r,t)?"checked":""} ${dis}> Adults only</label>
         <label>Owner<select data-owner="${t.id}" ${dis}>${ownerOpts(t)}</select></label>
