@@ -87,7 +87,7 @@ nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:v
 nav.tabs .wrap{display:flex;gap:2px;overflow-x:auto}
 nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:14px 13px;font-weight:600;color:var(--muted);white-space:nowrap}
 nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--door)}
-main{padding:26px 0 60px}
+main{padding:40px 0 60px}
 
 .banner{background:var(--soon-soft);color:var(--soon);border:1px solid var(--soon);border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:.93rem}
 .roomHead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:6px}
@@ -174,6 +174,74 @@ label.cb{display:flex!important;align-items:center;gap:8px;font-weight:500!impor
 .vid{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
 .vid p{margin:6px 0}
 .hint{font-weight:400;color:var(--muted)}
+/* mobile-safe form layout */
+input,select,textarea{max-width:100%}
+.mrow{min-width:0;overflow:hidden}
+.mctl{min-width:0}
+.mctl label{min-width:0;max-width:100%}
+.mctl select{max-width:100%;min-width:0}
+textarea.auto{display:block;width:100%;resize:none;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;color:inherit;line-height:1.4;overflow-wrap:anywhere}
+textarea.mtitle{font-weight:600}
+.roomHead{margin-top:4px}
+.hh section:first-child h3,.settings section:first-child h3{margin-top:2px}
+/* Done tab */
+.wknav{display:flex;align-items:center;gap:14px;margin:16px 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.fchip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-weight:600;font-size:.88rem}
+.fchip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.dsum{color:var(--muted);margin:0 0 14px}
+.dsum strong{color:var(--ink)}
+.dhead,.drow{display:grid;grid-template-columns:1fr auto 34px;gap:10px;align-items:center}
+.dhead{font-size:.75rem;font-weight:700;color:var(--muted);padding-bottom:6px;border-bottom:2px solid var(--ink)}
+.drow{padding:12px 0;border-bottom:1px solid var(--line)}
+.dname{min-width:0;display:grid;gap:3px}
+.dname strong{font-weight:600;overflow-wrap:anywhere}
+.dwho{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.dwho .x{font-size:.78rem;color:var(--muted);margin-left:-6px}
+.dgrid{display:grid;grid-template-columns:repeat(7,24px);gap:3px;text-align:center}
+.dhead .dgrid span.tday{color:var(--ink)}
+.dc{height:24px;border-radius:5px;background:var(--surface);border:1px solid var(--line);font-size:.75rem;font-weight:700;display:grid;place-items:center}
+.dc.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.dc.tday{outline:2px solid var(--door);outline-offset:1px}
+.dtot{font-family:var(--serif);font-size:1.3rem;text-align:right}
+@media(max-width:420px){ .dgrid{grid-template-columns:repeat(7,20px);gap:2px} .dc{height:20px} }
+/* Recap */
+.recapcta{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:0 0 30px}
+.recapban{display:block;width:100%;text-align:left;margin:4px 0 18px;padding:14px 16px;border:0;border-radius:12px;background:var(--roof);color:#fff;font-weight:700;font-size:1rem}
+#recap{position:fixed;inset:0;z-index:60;color:#fff;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 14px) 22px calc(env(safe-area-inset-bottom,0px) + 20px);transition:background .4s;cursor:pointer;overflow:hidden}
+#recap.dark{color:#1D2B3A}
+.rbars{display:flex;gap:4px}
+.rbars span{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.35);overflow:hidden}
+#recap.dark .rbars span{background:rgba(29,43,58,.25)}
+.rbars span i{display:block;height:100%;width:0;background:currentColor}
+.rbars span.full i{width:100%}
+.rbars span.now i{animation:rbar 6.5s linear forwards}
+@keyframes rbar{to{width:100%}}
+.rclose{position:absolute;top:calc(env(safe-area-inset-top,0px) + 26px);right:18px;background:none;border:0;color:inherit;font-size:1.3rem;z-index:2}
+.rslide{flex:1;display:flex;flex-direction:column;justify-content:center;max-width:520px;width:100%;margin:0 auto}
+.rslide>*{animation:rup .6s ease both}
+.rslide>*:nth-child(2){animation-delay:.12s}.rslide>*:nth-child(3){animation-delay:.24s}.rslide>*:nth-child(4){animation-delay:.36s}.rslide>*:nth-child(5){animation-delay:.48s}.rslide>*:nth-child(6){animation-delay:.6s}
+@keyframes rup{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.rslide h2{font-size:clamp(2.2rem,9vw,3.4rem);margin:4px 0 12px}
+.rslide p{margin:0 0 6px;font-size:1.1rem;opacity:.92}
+.rslide .mid{font-size:1.3rem;font-weight:700;opacity:1}
+.kick{text-transform:uppercase;letter-spacing:.12em;font-size:.8rem;font-weight:700;opacity:.85}
+.huge{font-family:var(--serif);font-size:clamp(4.5rem,22vw,7.5rem);line-height:1;margin:14px 0 6px}
+.stat{display:grid;grid-template-columns:44px auto 1fr;gap:12px;align-items:baseline;margin-top:16px}
+.stat .em{font-size:1.8rem}.stat .n{font-family:var(--serif);font-size:2.6rem;line-height:1}.stat .l{font-size:1.05rem}
+.facts{display:grid;gap:12px;margin-top:22px}
+.facts div{display:grid;gap:2px;border-top:1px solid rgba(255,255,255,.35);padding-top:10px}
+.facts span{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;opacity:.8}
+.facts strong{font-size:1.15rem}
+.crown{font-size:4rem;animation:bob 1.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px) rotate(-6deg)}}
+.final{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:10px}
+.final li{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;font-size:1.15rem;background:rgba(255,255,255,.35);border-radius:10px;padding:10px 12px}
+.rhint{text-align:center;font-size:.8rem;opacity:.7}
+.confetti{position:absolute;inset:0;pointer-events:none}
+.confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{top:110%;transform:translateX(30px) rotate(540deg)}}
+@media (prefers-reduced-motion: reduce){ .rslide>*,.crown,.rbars span.now i{animation:none} .rbars span.now i{width:100%} }
 #auth{position:fixed;inset:0;z-index:40;background:var(--paper);overflow:auto}
 .authwrap{min-height:100%;display:grid;place-items:center;padding:24px 18px}
 .authcard{width:100%;max-width:420px}
@@ -264,7 +332,9 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 
 <nav class="tabs"><div class="wrap" role="tablist">
   <button role="tab" data-view="my" aria-selected="true">My week</button>
+  <button role="tab" data-view="any" aria-selected="false">Anytime</button>
   <button role="tab" data-view="rooms" aria-selected="false">Rooms</button>
+  <button role="tab" data-view="done" aria-selected="false">Done</button>
   <button role="tab" data-view="family" aria-selected="false">Household</button>
   <button role="tab" data-view="settings" aria-selected="false">Settings</button>
 </div></nav>
@@ -698,7 +768,7 @@ function computeAssign(prevAssign, fixed){
 function progress(mid){
   let assigned=0, doneMin=0, n=0, nd=0;
   if(week) Object.entries(effAssign()).forEach(([tid,a])=>{
-    if(a!==mid) return; const f=findTask(tid); if(!f) return;
+    if(a!==mid) return; const f=findTask(tid); if(!f || isNeed(f.t)) return;
     const load=taskLoad(f.r,f.t); n++;
     if(f.t.every===1){
       const per=perDay(f.t), cnt=entriesFor(tid).length, got=Math.min(cnt,7*per)*unitMin(f.r,f.t);
@@ -1223,7 +1293,7 @@ function howtoSheet(){
 let pendingRender=false;
 function render(){
   const a=document.activeElement;
-  if(a && a.closest && a.closest("#view,#overlay") && a.matches('input[type=text],input[type=number]')){ pendingRender=true; return; }
+  if(a && a.closest && a.closest("#view,#overlay") && a.matches('input[type=text],input[type=number],textarea')){ pendingRender=true; return; }
   pendingRender=false;
   renderHeader();
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.view===view)));
@@ -1231,7 +1301,8 @@ function render(){
   if(phase==="loading"){ v.innerHTML=`<p class="empty">Loading your house…</p>`; renderOverlay(); return; }
   if(phase==="waiting"){ v.innerHTML=`<p class="empty">This house hasn't been set up yet. Ask whoever shared it with you to open it first.</p>`; renderOverlay(); return; }
   const banner = !canWrite ? `<div class="banner">You can see the plan but can't check things off. Ask the person who set this up to share it with you as an Editor.</div>` : "";
-  v.innerHTML = banner + (view==="my"?viewMy():view==="rooms"?viewRooms():view==="family"?viewFamily():viewSettings());
+  v.innerHTML = banner + (view==="my"?viewMy():view==="any"?viewAny():view==="done"?viewDone():view==="rooms"?viewRooms():view==="family"?viewFamily():viewSettings());
+  document.querySelectorAll("textarea.auto").forEach(autosize);
   if(view==="settings" && mQuery) applySearch();
   renderOverlay();
 }
@@ -1362,12 +1433,12 @@ function viewMy(){
   const mine=[], grabs=[], others={};
   const A=effAssign();
   Object.entries(A).forEach(([tid,a])=>{
-    const f=findTask(tid); if(!f) return;
+    const f=findTask(tid); if(!f || isNeed(f.t)) return;
     if(a===me.id) mine.push(f);
     else if(!a || !member(a)) grabs.push(f);
     else (others[a]=others[a]||[]).push(f);
   });
-  planItems().forEach(it=>{ if(!(it.t.id in A)) grabs.push({r:it.r,t:it.t}); });
+  planItems().forEach(it=>{ if(!(it.t.id in A) && !isNeed(it.t)) grabs.push({r:it.r,t:it.t}); });
   const sortFn=(x,y)=>(doneThisWeek(x.t)-doneThisWeek(y.t)) || (status(x.t).n-status(y.t).n);
   const daily=mine.filter(x=>x.t.every===1).sort(sortFn), weekly=mine.filter(x=>x.t.every!==1).sort(sortFn);
   const pct=p.assigned?Math.min(100,Math.round(p.doneMin/p.assigned*100)):100;
@@ -1378,14 +1449,142 @@ function viewMy(){
   if(daily.length) h+=`<div class="group"><h3>Every day<small>check off today's</small></h3>${daily.map(x=>taskRow(x.r,x.t,{where:1,dots:1,noChip:1})).join("")}</div>`;
   if(weekly.length) h+=`<div class="group"><h3>This week<small>${weekly.filter(x=>doneThisWeek(x.t)).length} of ${weekly.length} done</small></h3>${weekly.map(x=>taskRow(x.r,x.t,{where:1,noChip:1})).join("")}</div>`;
   if(!mine.length) h+=`<p class="empty">Nothing assigned to you this week.</p>`;
-  const comes=allTasks().filter(x=>isNeed(x.t) && !ownerOf(x.t));
-  if(comes.length) h+=`<div class="group"><h3>As it comes up<small>anyone can log these</small></h3>${comes.map(x=>taskRow(x.r,x.t,{where:1,noChip:1})).join("")}</div>`;
+  const day=new Date().getDay();
+  if((day===0 || day===1) && (hist[shiftWeek(curWk,-1)] || weekData(curWk).length)) h+=`<button class="recapban" data-recap="${day===1 && hist[shiftWeek(curWk,-1)] ? shiftWeek(curWk,-1) : curWk}" type="button">▶ Your week in review is ready</button>`;
   const openGrabs=grabs.filter(x=>!doneThisWeek(x.t));
   if(openGrabs.length) h+=`<div class="group"><h3>Up for grabs<small>${openGrabs.length}</small></h3>${openGrabs.sort(sortFn).map(x=>taskRow(x.r,x.t,{where:1,showGrab:1})).join("")}</div>`;
   const helpList=Object.entries(others).map(([mid,list])=>[mid,list.filter(x=>!doneThisWeek(x.t)).sort(sortFn)]).filter(x=>x[1].length);
   if(helpList.length) h+=`<details class="group"><summary>Help someone out<small>${helpList.reduce((n,x)=>n+x[1].length,0)} still open</small></summary>
     ${helpList.map(([mid,list])=>`<div style="margin-top:14px">${chip(member(mid))}</div>${list.map(x=>taskRow(x.r,x.t,{where:1,noTip:1,noChip:1,dots:1})).join("")}`).join("")}</details>`;
   return h;
+}
+
+// ---------------- Anytime tab ----------------
+function viewAny(){
+  const me=member(meId);
+  const list=allTasks().filter(x=>isNeed(x.t) && (!ownerOf(x.t) || x.t.owner===meId));
+  let h=`<div class="roomHead"><div><h2>As it comes up</h2><div class="sub">Tap each time you do one. These aren't on anyone's weekly list, but every one counts toward the leaderboard for whoever does it.</div></div></div>`;
+  if(!list.length) return h+`<p class="empty">No "as it comes up" tasks yet. In Settings → All tasks, set a task's frequency to As it comes up.</p>`;
+  const mine=list.filter(x=>ownerOf(x.t)), shared=list.filter(x=>!ownerOf(x.t));
+  const byRoom=arr=>{ const g={}; arr.forEach(x=>{ (g[x.r.id]=g[x.r.id]||{r:x.r,ts:[]}).ts.push(x); }); return Object.values(g); };
+  if(mine.length) h+=`<div class="group"><h3>Yours<small>only you see these</small></h3>${mine.map(x=>taskRow(x.r,x.t,{where:1,noChip:1})).join("")}</div>`;
+  byRoom(shared).forEach(g=>{ h+=`<div class="group"><h3>${esc(g.r.name)}<small>anyone</small></h3>${g.ts.map(x=>taskRow(x.r,x.t,{noChip:1})).join("")}</div>`; });
+  return h;
+}
+
+// ---------------- Done tab ----------------
+let doneWk=null, doneWho="";
+const DAYS=["M","T","W","T","F","S","S"];
+function weekData(ws){
+  const src = ws===curWk ? wkdone : hist[ws]; const out=[];
+  Object.entries(src||{}).forEach(([k,v])=>{ if(!v || typeof v!=="object" || !v.by || !k.includes("~")) return;
+    const p=k.split("~"); out.push({tid:p[0], d:p[1], by:v.by, with:Array.isArray(v.with)?v.with.filter(Boolean):[], min:v.min||0, at:v.at||0}); });
+  return out;
+}
+function knownWeeks(){ return [...new Set([curWk].concat(Object.keys(hist)))].sort(); }
+function viewDone(){
+  const ws=doneWk||curWk, weeks=knownWeeks(), i=weeks.indexOf(ws);
+  const E=weekData(ws).filter(e=>!doneWho || e.by===doneWho || e.with.includes(doneWho));
+  const credit=creditsIn(ws===curWk?wkdone:hist[ws]);
+  const mins = doneWho ? (credit[doneWho]||0) : E.reduce((n,e)=>n+e.min,0);
+  let h=`<div class="roomHead"><div><h2>Done</h2><div class="sub">Everything checked off, by day.</div></div></div>
+    <div class="wknav">
+      <button class="btn soft sm" data-dwk="${i>0?weeks[i-1]:""}" ${i>0?"":"disabled"} type="button" aria-label="Previous week">‹</button>
+      <strong>${ws===curWk?"This week":"Week of "+fmt(ws)}</strong>
+      <button class="btn soft sm" data-dwk="${i<weeks.length-1?weeks[i+1]:""}" ${i<weeks.length-1?"":"disabled"} type="button" aria-label="Next week">›</button>
+    </div>
+    <div class="chips"><button class="fchip ${doneWho?"":"on"}" data-dwho="" type="button">Everyone</button>${members().filter(m=>m.name).map(m=>`<button class="fchip ${doneWho===m.id?"on":""}" data-dwho="${m.id}" type="button">${esc(m.name)}</button>`).join("")}</div>
+    <p class="dsum"><strong>${E.length}</strong> check-off${E.length===1?"":"s"}, <strong>${hrs(mins)}</strong> of work${doneWho?` credited to ${esc(mName(member(doneWho)))}`:""}.</p>`;
+  if(!E.length) return h+`<p class="empty">Nothing checked off ${ws===curWk?"yet this week":"that week"}.</p>`;
+  const g={};
+  E.forEach(e=>{ const x=g[e.tid]=g[e.tid]||{tid:e.tid,n:0,days:[0,0,0,0,0,0,0],who:{}};
+    x.n++; const di=Math.round((parse(e.d)-parse(ws))/86400000); if(di>=0&&di<7) x.days[di]++;
+    [e.by].concat(e.with).forEach(p=>{ x.who[p]=(x.who[p]||0)+1; }); });
+  const rows=Object.values(g).sort((a,b)=>b.n-a.n);
+  const todayIdx=ws===curWk?Math.round((parse(todayISO())-parse(ws))/86400000):-1;
+  h+=`<div class="dhead"><span></span><span class="dgrid">${DAYS.map((d,k)=>`<span class="${k===todayIdx?"tday":""}">${d}</span>`).join("")}</span><span></span></div>`;
+  h+=rows.map(x=>{ const f=findTask(x.tid);
+    return `<div class="drow"><div class="dname"><strong>${esc(f?f.t.title:"Removed task")}</strong>${f?`<span class="where">${esc(f.r.name)}</span>`:""}
+        <span class="dwho">${Object.entries(x.who).map(([p,c])=>member(p)?`${chip(member(p))}${c>1?`<span class="x">×${c}</span>`:""}`:"").join(" ")}</span></div>
+      <span class="dgrid">${x.days.map((c,k)=>`<span class="dc ${c?"on":""} ${k===todayIdx?"tday":""}" title="${c} on ${["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][k]}">${c||""}</span>`).join("")}</span>
+      <span class="dtot">${x.n}</span></div>`; }).join("");
+  return h;
+}
+
+// ---------------- Weekly recap ("wrapped") ----------------
+let recap=null;
+const reduceMotion=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
+function buildRecap(ws){
+  const E=weekData(ws), ms=members().filter(m=>m.name);
+  const titleOf=tid=>{ const f=findTask(tid); return f?f.t.title:"a removed task"; };
+  const dayName=d=>parse(d).toLocaleDateString(undefined,{weekday:"long"});
+  const total=E.reduce((n,e)=>n+e.min,0);
+  const count=re=>E.filter(e=>re.test(titleOf(e.tid))).length;
+  const slides=[];
+  slides.push({bg:"var(--roof)", html:`<div class="kick">Week of ${esc(fmt(ws))}</div><h2>Leslie, wrapped</h2>
+    <div class="huge">${E.length}</div><p>things done around the house</p><p class="mid">${hrs(total)} of work, together</p>`});
+  if(!E.length){ slides.push({bg:"var(--roof)", html:`<h2>A quiet week</h2><p>Nothing logged yet. Check a few things off and come back.</p>`}); return slides; }
+  const fun=[[/walk/i,"walks for Oppie","🐕"],[/feed oppie/i,"meals for Oppie","🦴"],[/cook dinner/i,"dinners cooked","🍳"],[/splendor/i,"Splendor boards set up","💎"],[/laundry/i,"loads of laundry","🧺"],[/dishwasher/i,"dishwasher runs","🍽️"]]
+    .map(([re,l,i])=>[count(re),l,i]).filter(x=>x[0]>0);
+  if(fun.length) slides.push({bg:"#2F6F8F", html:`<div class="kick">By the numbers</div>${fun.map(([n,l,i])=>`<div class="stat"><span class="em">${i}</span><span class="n">${n}</span><span class="l">${esc(l)}</span></div>`).join("")}`});
+  const cred=creditsIn(ws===curWk?wkdone:hist[ws]);
+  ms.forEach(m=>{
+    const mine=E.filter(e=>e.by===m.id || e.with.includes(m.id));
+    if(!mine.length){ slides.push({bg:mColor(m), html:`<div class="kick">${esc(m.name)}</div><h2>Taking it easy</h2><p>Nothing logged this week. There's always next week.</p>`}); return; }
+    const byTask={}, byDay={}; mine.forEach(e=>{ byTask[e.tid]=(byTask[e.tid]||0)+1; byDay[e.d]=(byDay[e.d]||0)+1; });
+    const top=Object.entries(byTask).sort((a,b)=>b[1]-a[1])[0];
+    const busy=Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
+    const early=mine.filter(e=>e.at && e.by===m.id).sort((a,b)=>{ const ta=new Date(a.at), tb=new Date(b.at); return (ta.getHours()*60+ta.getMinutes())-(tb.getHours()*60+tb.getMinutes()); })[0];
+    const helped = (ws===curWk && week && week.assign) ? mine.filter(e=>e.by===m.id && week.assign[e.tid] && week.assign[e.tid]!==m.id && member(week.assign[e.tid])).length : 0;
+    const share=total?Math.round((cred[m.id]||0)/total*100):0;
+    slides.push({bg:mColor(m), html:`<div class="kick">${esc(m.name)}'s week</div>
+      <div class="huge">${hrs(cred[m.id]||0)}</div><p>of work, ${share}% of the household's</p>
+      <div class="facts">
+        <div><span>Most done</span><strong>${esc(titleOf(top[0]))}${top[1]>1?` ×${top[1]}`:""}</strong></div>
+        <div><span>Busiest day</span><strong>${esc(dayName(busy[0]))}, ${busy[1]} thing${busy[1]>1?"s":""}</strong></div>
+        ${early?`<div><span>Earliest check-off</span><strong>${new Date(early.at).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}</strong></div>`:""}
+        ${helped?`<div><span>Covered for others</span><strong>${helped} time${helped>1?"s":""}</strong></div>`:""}
+      </div>`});
+  });
+  const sc=scores(ws===curWk?wkdone:hist[ws]).filter(x=>x.pts>0);
+  if(sc.length){
+    const champ=sc[0], tie=sc[1] && sc[1].pts===champ.pts;
+    slides.push({bg:"var(--door)", dark:1, confetti:!tie, html:`<div class="kick">${ws===curWk?"So far this week":"This week's champion"}</div>
+      ${tie?`<h2>It's a tie!</h2>`:`<div class="crown">👑</div><h2>${esc(mName(champ.m))}</h2>`}
+      <ol class="final">${sc.map((x,i)=>`<li><span>${["🥇","🥈","🥉"][i]||"#"+(i+1)}</span><span>${esc(mName(x.m))}</span><strong>${x.pts} pts</strong></li>`).join("")}</ol>`});
+  }
+  return slides;
+}
+function openRecap(ws){ recap={ws, slides:buildRecap(ws), i:0}; drawRecap(); }
+function closeRecap(){ if(recap){ clearTimeout(recap.timer); } recap=null; const el=document.getElementById("recap"); if(el) el.remove(); }
+function drawRecap(){
+  if(!recap) return;
+  clearTimeout(recap.timer);
+  let el=document.getElementById("recap");
+  if(!el){ el=document.createElement("div"); el.id="recap"; el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); el.setAttribute("aria-label","Weekly recap"); document.body.appendChild(el); }
+  const s=recap.slides[recap.i];
+  let confetti="";
+  if(s.confetti && !reduceMotion()){ const cols=["#E3A72F","#2F7A55","#B23A48","#2F6F8F","#fff","#6A4C93"]; for(let k=0;k<60;k++) confetti+=`<i style="left:${Math.random()*100}%;background:${cols[k%cols.length]};animation-delay:${(Math.random()*1.2).toFixed(2)}s;animation-duration:${(2.2+Math.random()*1.6).toFixed(2)}s;transform:rotate(${Math.round(Math.random()*360)}deg)"></i>`; }
+  el.style.background=s.bg;
+  el.className=s.dark?"dark":"";
+  el.innerHTML=`<div class="rbars">${recap.slides.map((_,k)=>`<span class="${k<recap.i?"full":k===recap.i?"now":""}"><i></i></span>`).join("")}</div>
+    <button class="rclose" data-rclose type="button" aria-label="Close recap">✕</button>
+    <div class="rslide" data-rnext>${s.html}</div>
+    <div class="confetti" aria-hidden="true">${confetti}</div>
+    <div class="rhint">${recap.i<recap.slides.length-1?"Tap to continue":"Tap to close"}</div>`;
+  if(!reduceMotion()) recap.timer=setTimeout(()=>stepRecap(1),6500);
+}
+function stepRecap(d){ if(!recap) return; const n=recap.i+d; if(n<0) return; if(n>=recap.slides.length){ closeRecap(); return; } recap.i=n; drawRecap(); }
+document.addEventListener("click",e=>{
+  if(!recap) return;
+  if(e.target.closest("[data-rclose]")){ closeRecap(); return; }
+  const r=document.getElementById("recap"); if(!r || !r.contains(e.target)) return;
+  const x=e.clientX||0; stepRecap(x < window.innerWidth*0.3 ? -1 : 1);
+});
+document.addEventListener("keydown",e=>{ if(!recap) return; if(e.key==="Escape") closeRecap(); else if(e.key==="ArrowRight"||e.key===" ") { e.preventDefault(); stepRecap(1); } else if(e.key==="ArrowLeft") stepRecap(-1); });
+function recapButtons(){
+  const prev=shiftWeek(curWk,-1);
+  return `<div class="recapcta"><button class="btn" data-recap="${curWk}" type="button">▶ This week's recap</button>${hist[prev]?`<button class="linky" data-recap="${prev}" type="button">Last week's recap</button>`:""}</div>`;
 }
 
 function roomCounts(room){ let over=0,today=0; room.tasks.forEach(t=>{ if(doneThisWeek(t)&&t.every===1) return; const s=status(t); if(s.key==="overdue") over++; else if(s.key==="today") today++; }); return {over,today}; }
@@ -1451,7 +1650,7 @@ function viewFamily(){
   const credits=creditsIn(wkdone);
   const totalCredit=Object.values(credits).reduce((a,b)=>a+b,0);
   let planned=0; if(week) Object.entries(effAssign()).forEach(([tid])=>{ const f=findTask(tid); if(f) planned+=taskLoad(f.r,f.t); });
-  let h=`<div class="hh">`+leaderboardHTML()+`<section><h3>This week's split</h3>
+  let h=`<div class="hh">`+recapButtons()+leaderboardHTML()+`<section><h3>This week's split</h3>
     <p>Bars show each person's share of the work actually done this week. The line marks their fair share. Time counts for whoever did the task, assigned or not.</p>
     <div class="fair">${named.map(m=>{
       const target=(m.share==null?1:m.share)/totalShare*100;
@@ -1488,7 +1687,7 @@ function managerHTML(){
   const row=(r,t)=>{
     const daily=t.every===1;
     return `<div class="mrow" data-q="${esc((t.title+" "+r.name).toLowerCase())}">
-      <input type="text" class="mtitle" data-ttitle="${t.id}" value="${esc(t.title)}" aria-label="Task name" ${dis}>
+      <textarea class="mtitle auto" rows="1" data-ttitle="${t.id}" aria-label="Task name" ${dis}>${esc(t.title)}</textarea>
       <div class="mctl">
         <label>How often<select data-freq="${t.id}" ${dis}>${freqOptions(t)}</select></label>
         <label>Minutes${taskCount(r,t)>1?` <span class="hint">per room</span>`:""}<input type="number" min="1" max="600" data-min="${t.id}" value="${taskMin(t)}" ${dis}></label>
@@ -1500,7 +1699,7 @@ function managerHTML(){
         <label class="cb"><input type="checkbox" data-adult="${t.id}" ${isAdult(r,t)?"checked":""} ${dis}> Adults only</label>
         <label>Owner<select data-owner="${t.id}" ${dis}>${ownerOpts(t)}</select></label>
         <label>Room<select data-troom="${t.id}" ${dis}>${roomOpts(r.id)}</select></label>
-        <label class="phr">Siri phrases <span class="hint">other ways you'd say it, separated by commas</span><input type="text" data-aliases="${t.id}" value="${esc((t.aliases||[]).join(", "))}" placeholder="e.g. emptied the dishwasher" ${dis}></label>
+        <label class="phr">Siri phrases <span class="hint">other ways you'd say it, separated by commas</span><textarea class="auto" rows="1" data-aliases="${t.id}" placeholder="e.g. emptied the dishwasher" ${dis}>${esc((t.aliases||[]).join(", "))}</textarea></label>
         ${canWrite?`<button class="linky del" data-del="${t.id}" type="button">Delete</button>`:""}
       </div></div>`;
   };
@@ -1645,6 +1844,9 @@ document.addEventListener("click",e=>{
   const tab=t.closest("nav.tabs [data-view]"); if(tab){ view=tab.dataset.view; openEdit=null; render(); return; }
   if(t.closest("[data-switch]")){ lsSet("home-base-me",null); meId=null; switching=true; showPicker=true; pickerSkipped=false; render(); return; }
   const d=t.closest("[data-done]"); if(d){ toggle(d.dataset.done); return; }
+  const rc=t.closest("[data-recap]"); if(rc){ openRecap(rc.dataset.recap); return; }
+  const dw=t.closest("[data-dwk]"); if(dw){ if(dw.dataset.dwk){ doneWk=dw.dataset.dwk; render(); } return; }
+  const dh=t.closest("[data-dwho]"); if(dh){ doneWho=dh.dataset.dwho; render(); return; }
   const hw=t.closest("[data-howto]"); if(hw){ howtoOpen=hw.dataset.howto; renderOverlay(); const i=document.querySelector(".sheet.howto"); if(i) i.scrollTop=0; return; }
   if(t.closest("[data-howclose]") || (t.matches && t.matches("[data-howbg]"))){ howtoOpen=null; renderOverlay(); return; }
   if(t.id==="hvSave"){ const u=safeUrl(document.getElementById("hvUrl").value); if(!u){ toast("That doesn't look like a web link. It should start with https://"); return; }
@@ -1714,13 +1916,15 @@ function addTask(){
   const rId=room.id; inp.value=""; inp.blur();
   updateRooms(rs=>{ const r=rs.find(x=>x.id===rId); if(r) r.tasks.push(Object.assign({id:rId+"c"+rid(),title,tip:"",m:0,min},fp)); }).then(()=>toast(`Added: ${title}`));
 }
+function autosize(el){ el.style.height="auto"; el.style.height=(el.scrollHeight+2)+"px"; }
+document.addEventListener("input",e=>{ if(e.target.classList && e.target.classList.contains("auto")) autosize(e.target); });
 document.addEventListener("input",e=>{ if(e.target.id==="mSearch"){ mQuery=e.target.value; applySearch(); } });
 document.addEventListener("toggle",e=>{ const dt=e.target; if(dt.classList && dt.classList.contains("mroom") && !mQuery){ dt.open?openMRooms.add(dt.dataset.mroom):openMRooms.delete(dt.dataset.mroom); } },true);
 document.addEventListener("keydown",e=>{
   if(e.key==="Escape" && howtoOpen){ howtoOpen=null; renderOverlay(); return; }
   if(e.key==="Enter" && e.target.id==="hvUrl"){ e.preventDefault(); document.getElementById("hvSave").click(); return; }
   if(e.key==="Enter" && e.target.id==="mNewTitle"){ e.preventDefault(); document.getElementById("mAdd").click(); return; }
-  if(e.key==="Enter" && e.target.dataset && e.target.dataset.ttitle){ e.preventDefault(); e.target.blur(); return; }
+  if(e.key==="Enter" && e.target.dataset && (e.target.dataset.ttitle || e.target.dataset.aliases!==undefined)){ e.preventDefault(); e.target.blur(); return; }
   if(e.key!=="Enter") return;
   const id=e.target.id;
   if(id==="newTitle"){ e.preventDefault(); addTask(); }
